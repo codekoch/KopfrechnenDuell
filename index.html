@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kopfalgebra Attack</title>
+    <title>Kopfrechnen Duell</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -73,10 +73,14 @@
     <div id="game-ui" class="flex-1 flex w-full h-full hidden">
         
         <!-- PLAYER 1 (LEFT) -->
-        <div id="btn-p1" class="w-1/4 h-full bg-red-700 relative flex flex-col justify-center items-center shadow-[inset_-15px_0_30px_rgba(0,0,0,0.6)] cursor-pointer">
-            <h2 class="text-4xl md:text-6xl font-black text-white/30 tracking-widest uppercase rotate-180" style="writing-mode: vertical-rl;">Spieler 1</h2>
-            <div id="score-p1" class="text-6xl md:text-8xl font-black mt-8 text-white drop-shadow-lg">0</div>
-            <div id="ready-p1" class="absolute bottom-[15%] text-lg md:text-2xl font-bold text-white/50 pointer-events-none transition-colors duration-300 text-center leading-tight"></div>
+        <div id="btn-p1" class="w-1/4 h-full bg-red-700 relative flex flex-col justify-between items-center py-6 md:py-10 shadow-[inset_-15px_0_30px_rgba(0,0,0,0.6)] cursor-pointer">
+            <div class="flex-1 flex items-center justify-center overflow-hidden">
+                <h2 class="text-4xl md:text-6xl font-black text-white/30 tracking-widest uppercase rotate-180" style="writing-mode: vertical-rl;">Spieler 1</h2>
+            </div>
+            <div class="flex flex-col items-center">
+                <div id="score-p1" class="text-6xl md:text-8xl font-black text-white drop-shadow-lg">0</div>
+                <div id="ready-p1" class="h-16 mt-4 text-lg md:text-2xl font-bold text-white/50 pointer-events-none transition-colors duration-300 text-center leading-tight flex items-center justify-center"></div>
+            </div>
             
             <div id="flash-p1" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-200"></div>
             <div id="floating-score-p1" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-7xl font-black pointer-events-none opacity-0"></div>
@@ -105,10 +109,14 @@
         </div>
 
         <!-- PLAYER 2 (RIGHT) -->
-        <div id="btn-p2" class="w-1/4 h-full bg-blue-700 relative flex flex-col justify-center items-center shadow-[inset_15px_0_30px_rgba(0,0,0,0.6)] cursor-pointer">
-            <h2 class="text-4xl md:text-6xl font-black text-white/30 tracking-widest uppercase" style="writing-mode: vertical-rl;">Spieler 2</h2>
-            <div id="score-p2" class="text-6xl md:text-8xl font-black mt-8 text-white drop-shadow-lg">0</div>
-            <div id="ready-p2" class="absolute bottom-[15%] text-lg md:text-2xl font-bold text-white/50 pointer-events-none transition-colors duration-300 text-center leading-tight"></div>
+        <div id="btn-p2" class="w-1/4 h-full bg-blue-700 relative flex flex-col justify-between items-center py-6 md:py-10 shadow-[inset_15px_0_30px_rgba(0,0,0,0.6)] cursor-pointer">
+            <div class="flex-1 flex items-center justify-center overflow-hidden">
+                <h2 class="text-4xl md:text-6xl font-black text-white/30 tracking-widest uppercase" style="writing-mode: vertical-rl;">Spieler 2</h2>
+            </div>
+            <div class="flex flex-col items-center">
+                <div id="score-p2" class="text-6xl md:text-8xl font-black text-white drop-shadow-lg">0</div>
+                <div id="ready-p2" class="h-16 mt-4 text-lg md:text-2xl font-bold text-white/50 pointer-events-none transition-colors duration-300 text-center leading-tight flex items-center justify-center"></div>
+            </div>
             
             <div id="flash-p2" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-200"></div>
             <div id="floating-score-p2" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-7xl font-black pointer-events-none opacity-0"></div>
@@ -120,13 +128,13 @@
         // --- MASSIVE DATA EXTRACTION FROM PDF ---
         // Format: [Frage, Richtige Antwort, Falsche Antworten (Pipe-separiert), Erklärung]
         const rawData = [
-            // Grafische Aufgaben mit SVGs
-            ["Welche Begriffe passen zur Figur?<br><svg viewBox='0 0 100 50' class='max-h-[14vh] mx-auto my-4 drop-shadow-lg text-yellow-400'><polygon points='20,40 80,40 90,10 30,10' fill='none' stroke='currentColor' stroke-width='4'/></svg>", "Parallelogramm, Viereck", "Raute, Rechteck|Quadrat, Raute|Rechteck, Viereck", "Ein Parallelogramm ist ein Viereck mit parallelen Gegenseiten."],
-            ["Welche Bezeichnungen haben die Geraden am Kreis?<br><svg viewBox='0 0 100 100' class='max-h-[16vh] mx-auto my-4 drop-shadow-lg text-blue-300'><circle cx='50' cy='50' r='30' fill='none' stroke='currentColor' stroke-width='3'/><line x1='10' y1='10' x2='20' y2='90' stroke='currentColor' stroke-width='3'/><text x='10' y='10' fill='currentColor' font-size='12' font-weight='bold'>1</text><line x1='30' y1='0' x2='40' y2='100' stroke='currentColor' stroke-width='3'/><text x='35' y='10' fill='currentColor' font-size='12' font-weight='bold'>2</text><line x1='60' y1='0' x2='90' y2='90' stroke='currentColor' stroke-width='3'/><text x='85' y='10' fill='currentColor' font-size='12' font-weight='bold'>3</text></svg>", "1: Passante, 2: Sekante, 3: Tangente", "1: Sekante, 2: Tangente, 3: Passante|1: Tangente, 2: Passante, 3: Sekante", "Passante (kein Schnitt), Sekante (2 Schnitte), Tangente (1 Schnitt)."],
-            ["Bestimme die Höhe $h$ im gleichschenkligen Dreieck:<br><svg viewBox='0 0 100 100' class='max-h-[14vh] mx-auto my-4 drop-shadow-lg text-red-400'><polygon points='10,90 90,90 50,10' fill='none' stroke='currentColor' stroke-width='3'/><line x1='50' y1='10' x2='50' y2='90' stroke='currentColor' stroke-dasharray='4'/><text x='50' y='102' fill='currentColor' font-size='14' text-anchor='middle'>4</text><text x='75' y='45' fill='currentColor' font-size='14'>5</text><text x='40' y='60' fill='currentColor' font-size='14'>h</text></svg>", "h = \\sqrt{21}", "h = 3|h = \\sqrt{41}|h = 4", "Pythagoras mit halber Basis (2): $h^2 + 2^2 = 5^2 \\Rightarrow h = \\sqrt{25-4}$"],
-            ["Bestimme die Höhe $h$ im gleichseitigen Dreieck:<br><svg viewBox='0 0 100 100' class='max-h-[14vh] mx-auto my-4 drop-shadow-lg text-green-400'><polygon points='10,90 90,90 50,20.7' fill='none' stroke='currentColor' stroke-width='3'/><line x1='50' y1='20.7' x2='50' y2='90' stroke='currentColor' stroke-dasharray='4'/><text x='50' y='102' fill='currentColor' font-size='14' text-anchor='middle'>4</text><text x='40' y='60' fill='currentColor' font-size='14'>h</text></svg>", "h = \\sqrt{12} = 2\\sqrt{3}", "h = 2|h = \\sqrt{8}|h = 3", "Pythagoras: $h^2 + 2^2 = 4^2 \\Rightarrow h = \\sqrt{16-4}$"],
-            ["Bestimme die Länge der Strecke $x$ (Strahlensatz):<br><svg viewBox='0 0 120 70' class='max-h-[14vh] mx-auto my-4 drop-shadow-lg text-purple-400'><polygon points='10,60 110,60 50,10' fill='none' stroke='currentColor' stroke-width='3'/><line x1='34' y1='30' x2='86' y2='30' stroke='currentColor' stroke-width='3'/><text x='25' y='50' fill='currentColor' font-size='14'>4</text><text x='75' y='50' fill='currentColor' font-size='14'>2</text><text x='60' y='25' fill='currentColor' font-size='14'>2</text><text x='95' y='40' fill='currentColor' font-size='14'>x</text></svg>", "x = 1", "x = 2|x = 0{,}5|x = 1{,}5", "Verhältnisgleichung: $\\frac{x}{2} = \\frac{2}{4} \\Rightarrow x = 1$"],
-            ["Bestimme die Länge der Diagonalen $d$:<br><svg viewBox='0 0 100 50' class='max-h-[14vh] mx-auto my-4 drop-shadow-lg text-orange-400'><rect x='10' y='10' width='80' height='30' fill='none' stroke='currentColor' stroke-width='3'/><line x1='10' y1='40' x2='90' y2='10' stroke='currentColor' stroke-dasharray='4'/><text x='50' y='52' fill='currentColor' font-size='14'>5</text><text x='95' y='30' fill='currentColor' font-size='14'>2</text></svg>", "d = \\sqrt{29}", "d = \\sqrt{21}|d = 7|d = 3", "Pythagoras: $d^2 = 5^2 + 2^2 = 25 + 4 = 29$"],
+            // Grafische Aufgaben mit überarbeiteten SVGs (Größer, keine Überschneidungen)
+            ["Welche Begriffe passen zur Figur?<br><svg viewBox='0 0 200 120' class='max-h-[22vh] mx-auto my-4 drop-shadow-lg text-yellow-400 overflow-visible'><polygon points='40,100 160,100 180,20 60,20' fill='none' stroke='currentColor' stroke-width='4'/></svg>", "Parallelogramm, Viereck", "Raute, Rechteck|Quadrat, Raute|Rechteck, Viereck", "Ein Parallelogramm ist ein Viereck mit parallelen Gegenseiten."],
+            ["Welche Bezeichnungen haben die Geraden am Kreis?<br><svg viewBox='0 0 200 200' class='max-h-[25vh] mx-auto my-4 drop-shadow-lg text-blue-300 overflow-visible'><circle cx='100' cy='100' r='60' fill='none' stroke='currentColor' stroke-width='4'/><line x1='20' y1='10' x2='30' y2='190' stroke='currentColor' stroke-width='4'/><text x='15' y='25' fill='currentColor' font-size='24' font-weight='bold' text-anchor='end'>1</text><line x1='60' y1='10' x2='90' y2='190' stroke='currentColor' stroke-width='4'/><text x='65' y='20' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>2</text><line x1='125' y1='10' x2='185' y2='190' stroke='currentColor' stroke-width='4'/><text x='175' y='25' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>3</text></svg>", "1: Passante, 2: Sekante, 3: Tangente", "1: Sekante, 2: Tangente, 3: Passante|1: Tangente, 2: Passante, 3: Sekante", "Passante (kein Schnitt), Sekante (2 Schnitte), Tangente (1 Schnitt)."],
+            ["Bestimme die Höhe $h$ im gleichschenkligen Dreieck:<br><svg viewBox='0 0 200 160' class='max-h-[25vh] mx-auto my-4 drop-shadow-lg text-red-400 overflow-visible'><polygon points='40,130 160,130 100,20' fill='none' stroke='currentColor' stroke-width='4'/><line x1='100' y1='20' x2='100' y2='130' stroke='currentColor' stroke-width='4' stroke-dasharray='6 6'/><text x='100' y='155' fill='currentColor' font-size='24' font-weight='bold' text-anchor='middle'>4</text><text x='135' y='65' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>5</text><text x='85' y='85' fill='currentColor' font-size='24' font-weight='bold' text-anchor='end'>h</text></svg>", "h = \\sqrt{21}", "h = 3|h = \\sqrt{41}|h = 4", "Pythagoras mit halber Basis (2): $h^2 + 2^2 = 5^2 \\Rightarrow h = \\sqrt{25-4}$"],
+            ["Bestimme die Höhe $h$ im gleichseitigen Dreieck:<br><svg viewBox='0 0 200 160' class='max-h-[25vh] mx-auto my-4 drop-shadow-lg text-green-400 overflow-visible'><polygon points='40,130 160,130 100,26' fill='none' stroke='currentColor' stroke-width='4'/><line x1='100' y1='26' x2='100' y2='130' stroke='currentColor' stroke-width='4' stroke-dasharray='6 6'/><text x='100' y='155' fill='currentColor' font-size='24' font-weight='bold' text-anchor='middle'>4</text><text x='85' y='85' fill='currentColor' font-size='24' font-weight='bold' text-anchor='end'>h</text></svg>", "h = \\sqrt{12} = 2\\sqrt{3}", "h = 2|h = \\sqrt{8}|h = 3", "Pythagoras: $h^2 + 2^2 = 4^2 \\Rightarrow h = \\sqrt{16-4}$"],
+            ["Bestimme die Länge der Strecke $x$ (Strahlensatz):<br><svg viewBox='0 0 240 160' class='max-h-[25vh] mx-auto my-4 drop-shadow-lg text-purple-400 overflow-visible'><polygon points='30,130 210,130 90,20' fill='none' stroke='currentColor' stroke-width='4'/><line x1='60' y1='75' x2='150' y2='75' stroke='currentColor' stroke-width='4'/><text x='25' y='110' fill='currentColor' font-size='24' font-weight='bold' text-anchor='end'>4</text><text x='65' y='45' fill='currentColor' font-size='24' font-weight='bold' text-anchor='end'>2</text><text x='190' y='110' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>2</text><text x='130' y='45' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>x</text></svg>", "x = 1", "x = 2|x = 0{,}5|x = 1{,}5", "Verhältnisgleichung: $\\frac{x}{2} = \\frac{2}{4} \\Rightarrow x = 1$"],
+            ["Bestimme die Länge der Diagonalen $d$:<br><svg viewBox='0 0 240 140' class='max-h-[25vh] mx-auto my-4 drop-shadow-lg text-orange-400 overflow-visible'><rect x='20' y='20' width='200' height='80' fill='none' stroke='currentColor' stroke-width='4'/><line x1='20' y1='100' x2='220' y2='20' stroke='currentColor' stroke-width='4' stroke-dasharray='6 6'/><text x='120' y='130' fill='currentColor' font-size='24' font-weight='bold' text-anchor='middle'>5</text><text x='230' y='65' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>2</text></svg>", "d = \\sqrt{29}", "d = \\sqrt{21}|d = 7|d = 3", "Pythagoras: $d^2 = 5^2 + 2^2 = 25 + 4 = 29$"],
             
             // Algebra - Seite 1 & 2
             ["Berechne $\\frac{1}{3} + \\frac{1}{2}$", "\\frac{5}{6}", "\\frac{2}{5}|\\frac{1}{6}|\\frac{2}{6}", "Hauptnenner bilden: $\\frac{2}{6} + \\frac{3}{6} = \\frac{5}{6}$"],
