@@ -57,12 +57,16 @@
     <!-- START SCREEN -->
     <div id="start-screen" class="absolute inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center">
         <h1 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-blue-500 mb-8 text-center px-4">
-            Kopfalgebra<br>Attack
+            Kopfrechnen<br>Duell
         </h1>
         <p class="text-xl md:text-2xl text-slate-400 mb-12 max-w-2xl text-center px-6">
             Ein 2-Spieler Duell. Das iPad liegt flach zwischen euch. 
             Tippt auf eure Seite, sobald die <b>richtige</b> Antwort in der Mitte erscheint. 
             Falsche Antworten geben Minuspunkte!
+            <br><br>
+            <span class="inline-block mt-4 text-yellow-400 font-bold bg-yellow-400/10 px-6 py-2 rounded-full border border-yellow-400/30">
+                ⭐ Tipp: Am besten im Vollbildmodus spielen!
+            </span>
         </p>
         <button onclick="startGame()" class="px-12 py-6 bg-green-500 hover:bg-green-400 text-white text-3xl font-bold rounded-full shadow-[0_0_40px_rgba(34,197,94,0.5)] transition-transform transform hover:scale-105 active:scale-95">
             SPIEL STARTEN
@@ -128,7 +132,7 @@
         // --- MASSIVE DATA EXTRACTION FROM PDF ---
         // Format: [Frage, Richtige Antwort, Falsche Antworten (Pipe-separiert), Erklärung]
         const rawData = [
-            // Grafische Aufgaben mit überarbeiteten SVGs (Größer, keine Überschneidungen)
+            // --- GRAFISCHE AUFGABEN ---
             ["Welche Begriffe passen zur Figur?<br><svg viewBox='0 0 200 120' class='max-h-[22vh] mx-auto my-4 drop-shadow-lg text-yellow-400 overflow-visible'><polygon points='40,100 160,100 180,20 60,20' fill='none' stroke='currentColor' stroke-width='4'/></svg>", "Parallelogramm, Viereck", "Raute, Rechteck|Quadrat, Raute|Rechteck, Viereck", "Ein Parallelogramm ist ein Viereck mit parallelen Gegenseiten."],
             ["Welche Bezeichnungen haben die Geraden am Kreis?<br><svg viewBox='0 0 200 200' class='max-h-[25vh] mx-auto my-4 drop-shadow-lg text-blue-300 overflow-visible'><circle cx='100' cy='100' r='60' fill='none' stroke='currentColor' stroke-width='4'/><line x1='20' y1='10' x2='30' y2='190' stroke='currentColor' stroke-width='4'/><text x='15' y='25' fill='currentColor' font-size='24' font-weight='bold' text-anchor='end'>1</text><line x1='60' y1='10' x2='90' y2='190' stroke='currentColor' stroke-width='4'/><text x='65' y='20' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>2</text><line x1='125' y1='10' x2='185' y2='190' stroke='currentColor' stroke-width='4'/><text x='175' y='25' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>3</text></svg>", "1: Passante, 2: Sekante, 3: Tangente", "1: Sekante, 2: Tangente, 3: Passante|1: Tangente, 2: Passante, 3: Sekante", "Passante (kein Schnitt), Sekante (2 Schnitte), Tangente (1 Schnitt)."],
             ["Bestimme die Höhe $h$ im gleichschenkligen Dreieck:<br><svg viewBox='0 0 200 160' class='max-h-[25vh] mx-auto my-4 drop-shadow-lg text-red-400 overflow-visible'><polygon points='40,130 160,130 100,20' fill='none' stroke='currentColor' stroke-width='4'/><line x1='100' y1='20' x2='100' y2='130' stroke='currentColor' stroke-width='4' stroke-dasharray='6 6'/><text x='100' y='155' fill='currentColor' font-size='24' font-weight='bold' text-anchor='middle'>4</text><text x='135' y='65' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>5</text><text x='85' y='85' fill='currentColor' font-size='24' font-weight='bold' text-anchor='end'>h</text></svg>", "h = \\sqrt{21}", "h = 3|h = \\sqrt{41}|h = 4", "Pythagoras mit halber Basis (2): $h^2 + 2^2 = 5^2 \\Rightarrow h = \\sqrt{25-4}$"],
@@ -136,76 +140,289 @@
             ["Bestimme die Länge der Strecke $x$ (Strahlensatz):<br><svg viewBox='0 0 240 160' class='max-h-[25vh] mx-auto my-4 drop-shadow-lg text-purple-400 overflow-visible'><polygon points='30,130 210,130 90,20' fill='none' stroke='currentColor' stroke-width='4'/><line x1='60' y1='75' x2='150' y2='75' stroke='currentColor' stroke-width='4'/><text x='25' y='110' fill='currentColor' font-size='24' font-weight='bold' text-anchor='end'>4</text><text x='65' y='45' fill='currentColor' font-size='24' font-weight='bold' text-anchor='end'>2</text><text x='190' y='110' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>2</text><text x='130' y='45' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>x</text></svg>", "x = 1", "x = 2|x = 0{,}5|x = 1{,}5", "Verhältnisgleichung: $\\frac{x}{2} = \\frac{2}{4} \\Rightarrow x = 1$"],
             ["Bestimme die Länge der Diagonalen $d$:<br><svg viewBox='0 0 240 140' class='max-h-[25vh] mx-auto my-4 drop-shadow-lg text-orange-400 overflow-visible'><rect x='20' y='20' width='200' height='80' fill='none' stroke='currentColor' stroke-width='4'/><line x1='20' y1='100' x2='220' y2='20' stroke='currentColor' stroke-width='4' stroke-dasharray='6 6'/><text x='120' y='130' fill='currentColor' font-size='24' font-weight='bold' text-anchor='middle'>5</text><text x='230' y='65' fill='currentColor' font-size='24' font-weight='bold' text-anchor='start'>2</text></svg>", "d = \\sqrt{29}", "d = \\sqrt{21}|d = 7|d = 3", "Pythagoras: $d^2 = 5^2 + 2^2 = 25 + 4 = 29$"],
             
-            // Algebra - Seite 1 & 2
+            // --- SEITE 1 ---
             ["Berechne $\\frac{1}{3} + \\frac{1}{2}$", "\\frac{5}{6}", "\\frac{2}{5}|\\frac{1}{6}|\\frac{2}{6}", "Hauptnenner bilden: $\\frac{2}{6} + \\frac{3}{6} = \\frac{5}{6}$"],
             ["Vereinfache $\\sqrt{180}$", "6\\sqrt{5}", "9\\sqrt{20}|18\\sqrt{10}|36\\sqrt{5}", "$\\sqrt{36 \\cdot 5} = 6\\sqrt{5}$"],
             ["Löse $-(x-1)^2 = -25$", "x=6 \\text{ oder } x=-4", "x=5 \\text{ oder } x=-5|x=26|x=\\pm 4", "$(x-1)^2 = 25 \\Rightarrow x-1 = \\pm 5$"],
             ["Faktorisiere $6x^3+8x^5+12x$", "2x(3x^2+4x^4+6)", "2x(3x^2+4x^4+12)|x(6x^2+8x^4+12)|2(3x^3+4x^5+6x)", "Größten gemeinsamen Faktor $2x$ ausklammern."],
             ["Berechne $(\\sqrt{x}+\\sqrt{2})^2$", "x + 2\\sqrt{2x} + 2", "x + 2|x^2 + 4|x + \\sqrt{2x} + 2", "1. binomische Formel: $a^2 + 2ab + b^2$"],
             ["Löse $3^x=27$", "x = 3", "x = 9|x = 4|x = \\sqrt{27}", "$3^3 = 27$"],
-            ["Zahl im Zehnersystem: $(101)_2$", "5", "101|9|3", "$1\\cdot 2^2 + 0\\cdot 2^1 + 1\\cdot 2^0 = 4+0+1 = 5$"],
-            ["$f(x)=x^2-2(x^3-2x)$. Berechne $f(-2)$", "12", "-12|20|-4", "Einsetzen: $(-2)^2 - 2((-2)^3 - 2(-2)) = 4 - 2(-8+4) = 12$"],
+            ["Bestimme die Zahl im Zehnersystem: $(101)_2$", "5", "101|9|3", "$1\\cdot 2^2 + 0\\cdot 2^1 + 1\\cdot 2^0 = 4+0+1 = 5$"],
+            ["Sei $f(x)=x^2-2(x^3-2x)$. Berechne $f(-2)$", "12", "-12|20|-4", "Einsetzen: $(-2)^2 - 2((-2)^3 - 2(-2)) = 4 - 2(-8+4) = 12$"],
             ["Faktorisiere $15xy^4+5x^3y^2-25xy$", "5xy(3y^3+x^2y-5)", "5xy(3y^4+x^2y^2-5)|5(3xy^4+x^3y^2-5)|15xy(y^3+x^2y-5)", "$5xy$ aus allen Termen ausklammern."],
             ["Berechne $\\log_3(81)$", "4", "9|27|3", "Die Frage lautet: 3 hoch was ist 81? $\\Rightarrow 3^4 = 81$"],
             ["Löse $\\frac{8}{x} = \\frac{1}{4}$", "x = 32", "x = 2|x = 4|x = 16", "Kreuzmultiplikation: $8 \\cdot 4 = x \\cdot 1$"],
             ["Löse nach a auf: $-6a^2+12b=0$", "a = \\pm\\sqrt{2b}", "a = \\sqrt{2b}|a = 2b|a = \\pm 2b", "$6a^2 = 12b \\Rightarrow a^2 = 2b$"],
+
+            // --- SEITE 2 ---
             ["Löse $2x^2=32$", "x = \\pm 4", "x = 4|x = 16|x = \\pm 16", "$x^2=16 \\Rightarrow x = \\pm 4$"],
             ["Berechne $\\frac{3}{4}+\\frac{1}{2}+\\frac{7}{4}$", "3", "\\frac{11}{4}|2|\\frac{10}{4}", "$\\frac{3}{4} + \\frac{2}{4} + \\frac{7}{4} = \\frac{12}{4} = 3$"],
             ["Löse $9x+3=3$", "x = 0", "x = 1|x = -1|x = \\frac{1}{3}", "$9x = 0 \\Rightarrow x = 0$"],
             ["Faktorisiere $2x^2+8x+8$", "2(x+2)^2", "2(x+4)^2|(2x+4)^2|2(x^2+4)", "2 ausklammern, dann 1. binomische Formel."],
+            ["Berechne $2 \\cdot \\sqrt{3}$ (Quadrat)", "12", "6|9|36", "Die Frage meint evtl. $(2\\sqrt{3})^2 = 4 \\cdot 3 = 12$"],
             ["Löse $2^x=32$", "x = 5", "x = 16|x = 4|x = 6", "$2^5 = 32$"],
             ["Berechne $63 : \\frac{3}{2}$", "42", "94{,}5|21|126", "Mit dem Kehrwert multiplizieren: $63 \\cdot \\frac{2}{3}$"],
-            ["$f(x)=x^3-2x^2$. Berechne $f(-1)$", "-3", "-1|1|3", "$(-1)^3 - 2(-1)^2 = -1 - 2 = -3$"],
+            ["Sei $f(x)=x^3-2x^2$. Berechne $f(-1)$", "-3", "-1|1|3", "$(-1)^3 - 2(-1)^2 = -1 - 2 = -3$"],
             ["Faktorisiere $3xy^4-9x^3y^2$", "3xy^2(y^2-3x^2)", "3xy(y^3-3x^2y)|3x^2y^2(y-3x)|xy^2(3y^2-9x^2)", "$3xy^2$ als größten gemeinsamen Faktor ausklammern."],
+            ["Berechne $\\log_4(16)$", "2", "4|8|16", "$4^2 = 16$"],
+            ["Löse $\\frac{12}{x}=\\frac{3}{4}$", "x = 16", "x = 9|x = 12|x = 48", "Kreuzmultiplikation: $12 \\cdot 4 = 3 \\cdot x \\Rightarrow 48 = 3x$"],
+            ["Löse nach a auf: $4a^2+8b=0$", "a = \\pm\\sqrt{-2b}", "a = \\sqrt{2b}|a = -2b|a = \\pm 2b", "$4a^2 = -8b \\Rightarrow a^2 = -2b$"],
 
-            // Algebra - Seite 3 & 4
+            // --- SEITE 3 ---
             ["Berechne $126-41$", "85", "75|81|95", "$126 - 40 = 86$, dann $- 1 = 85$"],
             ["Berechne $6 \\cdot 17$", "102", "112|92|108", "$6 \\cdot 10 + 6 \\cdot 7 = 60 + 42 = 102$"],
+            ["Berechne $145-58$", "87", "97|85|77", "$145 - 50 = 95$, dann $- 8 = 87$"],
             ["Berechne $20\\% \\text{ von } 400$", "80", "20|40|120", "$10\\%$ sind $40$, also sind $20\\%$ das Doppelte."],
             ["Zwischen welchen ganzen Zahlen liegt $\\sqrt{55}$?", "7 und 8", "5 und 6|6 und 7|8 und 9", "$7^2=49$ und $8^2=64$"],
-            ["Zwischen welchen ganzen Zahlen liegt $\\lg 241$?", "2 und 3", "1 und 2|3 und 4|24 und 25", "$10^2 = 100$ und $10^3 = 1000$"],
+            ["Zwischen welchen ganzen Zahlen liegt $\\lg 241$?", "2 und 3", "1 und 2|3 und 4|24 und 25", "Zehnerlogarithmus: $10^2 = 100$ und $10^3 = 1000$"],
+            ["Löse $3^x=81$", "x = 4", "x = 9|x = 3|x = 27", "$3^4 = 81$"],
             ["Berechne $\\sqrt{5} \\cdot \\sqrt{20}$", "10", "25|5\\sqrt{20}|100", "$\\sqrt{5 \\cdot 20} = \\sqrt{100} = 10$"],
+            ["Berechne $\\frac{1}{2} + \\frac{1}{3}$", "\\frac{5}{6}", "\\frac{2}{5}|\\frac{1}{6}|\\frac{2}{6}", "Hauptnenner 6: $\\frac{3}{6} + \\frac{2}{6}$"],
+            ["Berechne $3 : \\frac{1}{2}$", "6", "1{,}5|1|3", "Mit Kehrwert multiplizieren: $3 \\cdot 2 = 6$"],
             ["Löse $x^3-2x^2=0$", "x=0 \\text{ oder } x=2", "x=0 \\text{ oder } x=-2|x=2|x=\\sqrt{2}", "$x^2$ ausklammern: $x^2(x-2)=0$"],
             ["Multipliziere $(x+3)(x-1)$", "x^2+2x-3", "x^2-3|x^2+4x-3|x^2-2x+3", "Ausmultiplizieren: $x^2 -x + 3x - 3$"],
+            ["Löse $6x-1=1$", "x = \\frac{1}{3}", "x = 0|x = 1|x = 2", "$6x = 2 \\Rightarrow x = \\frac{2}{6} = \\frac{1}{3}$"],
+
+            // --- SEITE 4 ---
             ["Berechne $\\frac{1}{3} + \\frac{2}{5}$", "\\frac{11}{15}", "\\frac{3}{8}|\\frac{10}{15}|\\frac{7}{15}", "Hauptnenner 15: $\\frac{5}{15} + \\frac{6}{15}$"],
-            ["Löse $x^2-1 < 0$", "-1 < x < 1", "x < 1|x < -1|x > 1", "Parabel nach oben geöffnet, Nullstellen bei $\\pm 1$"],
+            ["Sei $f(x)=\\frac{x^2}{4}+3x-1$. Berechne $f(-2)$", "-6", "-8|0|-4", "$\\frac{4}{4} + 3(-2) - 1 = 1 - 6 - 1 = -6$"],
+            ["Löse $x^2-1 < 0$", "-1 < x < 1", "x < 1|x < -1|x > 1", "Nach oben geöffnete Parabel, Nullstellen bei $\\pm 1$"],
+            ["Berechne $\\sqrt{6{,}25}$", "2{,}5", "1{,}5|3{,}5|25", "$25^2 = 625$, also $2{,}5^2 = 6{,}25$"],
             ["Schreibe auf einen Bruchstrich: $x+1+\\frac{2}{x}$", "\\frac{x^2+x+2}{x}", "\\frac{x+3}{x}|\\frac{x^2+3}{x}|\\frac{2x+1}{x}", "Alle Terme mit $x$ erweitern."],
+            ["Multipliziere $(x-1)(2x+1)$", "2x^2-x-1", "2x^2+x-1|2x^2-1|x^2-x+1", "$2x^2 + x - 2x - 1$"],
+            ["Löse $3x^2=27$", "x = \\pm 3", "x = 3|x = 9|x = \\pm 9", "$x^2 = 9 \\Rightarrow x = \\pm 3$"],
+            ["Löse $3x+5=2$", "x = -1", "x = 1|x = -3|x = -\\frac{5}{3}", "$3x = -3 \\Rightarrow x = -1$"],
             ["Faktorisiere $x^2+3x+2$", "(x+1)(x+2)", "(x+3)(x-1)|x(x+3)+2|(x+2)^2", "Satz von Vieta: $1+2=3$ und $1\\cdot 2=2$"],
             ["Berechne $\\frac{2}{3} - \\frac{1}{4}$", "\\frac{5}{12}", "\\frac{1}{-1}|\\frac{1}{12}|\\frac{11}{12}", "Hauptnenner 12: $\\frac{8}{12} - \\frac{3}{12}$"],
             ["Kürze $\\frac{a^2b-ab^2}{ab}$", "a-b", "a|b|a^2-b^2", "$ab$ im Zähler ausklammern und dann kürzen."],
+            ["Bestimme den Schnittpunkt mit der x-Achse: $y=2x+3$", "x = -1{,}5", "x = 3|x = 1{,}5|x = -3", "$0 = 2x+3 \\Rightarrow -3 = 2x \\Rightarrow x = -1{,}5$"],
 
-            // Algebra - Seite 5 & 6
+            // --- SEITE 5 ---
+            ["Löse $3x-5=7$", "x = 4", "x = \\frac{2}{3}|x = 12|x = -4", "$3x = 12 \\Rightarrow x = 4$"],
             ["Schreibe als einen Bruch $\\frac{2}{x}+\\frac{3}{x^2}$", "\\frac{2x+3}{x^2}", "\\frac{5}{x^3}|\\frac{5}{x^2}|\\frac{2x+3}{x^3}", "Den ersten Bruch mit $x$ erweitern: $\\frac{2x}{x^2} + \\frac{3}{x^2}$"],
+            ["Multipliziere $(x-5)(x+3)$", "x^2-2x-15", "x^2-15|x^2-8x-15|x^2+2x-15", "$x^2 + 3x - 5x - 15$"],
             ["Ergänze zu einem Quadrat $x^2-8x$", "x^2-8x+16", "x^2-8x-16|x^2-8x+64|x^2-8x-8", "Die Hälfte von 8 ist 4, quadriert ist 16."],
+            ["Faktorisiere $3x^2-9x$", "3x(x-3)", "3x(x-9)|x(3x-9)|3(x^2-3)", "Größten gemeinsamen Teiler $3x$ ausklammern."],
             ["Zwischen welchen ganzen Zahlen liegt $\\log_2 100$?", "6 und 7", "5 und 6|7 und 8|10 und 11", "$2^6=64$ und $2^7=128$"],
+            ["Kürze $\\frac{a^2-a}{3a^2}$", "\\frac{a-1}{3a}", "\\frac{-a}{3}|\\frac{a-1}{3a^2}|\\frac{a}{3}", "$a$ ausklammern und kürzen."],
+            ["Sei $f(x)=2x^2-3x+1$. Berechne $f(2)$", "3", "7|1|5", "$2(4) - 3(2) + 1 = 8 - 6 + 1 = 3$"],
             ["Löse $5x^2-2x=0$", "x=0 \\text{ oder } x=\\frac{2}{5}", "x=0 \\text{ oder } x=\\frac{5}{2}|x=\\frac{2}{5}|x=0", "$x(5x-2)=0 \\Rightarrow 5x-2=0$"],
             ["Berechne $\\sin(90^\\circ)$", "1", "0|-1|0{,}5", "Am Einheitskreis ist der y-Wert bei 90° genau 1."],
+            ["Löse $x^2+6x+9=0$", "x = -3", "x = 3|x = \\pm 3|x = -9", "$(x+3)^2 = 0$"],
             ["Bestimme die x-Koordinate des Scheitelpunktes $y=x^2+4x$", "x = -2", "x = 2|x = -4|x = 0", "Scheitelpunktform oder $x_S = -\\frac{p}{2} = -\\frac{4}{2}$"],
+
+            // --- SEITE 6 ---
+            ["Löse $3x+2=8$", "x = 2", "x = 3|x = -2|x = 6", "$3x = 6 \\Rightarrow x = 2$"],
+            ["Faktorisiere $3x^2-6x$", "3x(x-2)", "3(x^2-2x)|x(3x-6)|3x(x+2)", "$3x$ ausklammern."],
+            ["Bestimme die x-Koordinate des Scheitelpunktes $y=x^2+3x$", "x = -1{,}5", "x = 1{,}5|x = -3|x = 0", "$x_S = -\\frac{p}{2} = -\\frac{3}{2}$"],
+            ["Berechne $17 \\cdot 23$", "391", "371|401|381", "3. binomische Formel: $(20-3)(20+3) = 400 - 9$"],
             ["Löse $\\frac{x}{5}=\\frac{2}{3}$", "x = \\frac{10}{3}", "x = \\frac{3}{10}|x = 10|x = 15", "Beide Seiten mal 5: $x = 5 \\cdot \\frac{2}{3}$"],
             ["Faktorisiere $3ab+b^2+2ab$", "b(5a+b)", "b(3a+b+2a)|b^2(5a)|ab(5+b)", "$3ab+2ab = 5ab$. Dann $b$ ausklammern."],
-            ["Löse $\\frac{x^2}{x+3}=0$", "x = 0", "x = -3|x = \\pm 3|x = 0 \\text{ oder } x=-3", "Ein Bruch ist genau dann 0, wenn der Zähler 0 ist (und der Nenner nicht)."],
+            ["Löse $(x-3)(x+5)=0$", "x=3 \\text{ oder } x=-5", "x=-3 \\text{ oder } x=5|x=3|x=-5", "Satz vom Nullprodukt."],
+            ["Berechne $\\sqrt{2{,}25}$", "1{,}5", "0{,}15|2{,}5|15", "$15^2 = 225$, also $1{,}5^2 = 2{,}25$"],
+            ["Löse $\\frac{x^2}{x+3}=0$", "x = 0", "x = -3|x = \\pm 3|x = 0 \\text{ oder } x=-3", "Ein Bruch ist genau dann 0, wenn der Zähler 0 ist (Nenner darf nicht 0 sein)."],
             ["Faktorisiere $a^3+a^5$", "a^3(1+a^2)", "a^3(1+a)|a^2(a+a^3)|a^5(a^{-2}+1)", "Die kleinste Potenz $a^3$ ausklammern."],
+            ["Berechne $\\log_2(64)$", "6", "8|32|4", "$2^6 = 64$"],
+            ["Schreibe als Bruch 0,4", "\\frac{2}{5}", "\\frac{1}{4}|\\frac{4}{100}|\\frac{1}{2}", "$0{,}4 = \\frac{4}{10} = \\frac{2}{5}$"],
 
-            // Algebra - Seite 7 bis 22 Highlights
+            // --- SEITE 7 ---
             ["Faktorisiere $2x^2-4x$", "2x(x-2)", "2(x^2-2x)|x(2x-4)|2x(x+2)", "Den größten gemeinsamen Teiler $2x$ ausklammern."],
+            ["Multipliziere $(x+1)(x+3)$", "x^2+4x+3", "x^2+3|x^2+3x+3|x^2+4x+4", "$x^2 + 3x + x + 3$"],
+            ["Löse $2x+6=0$", "x = -3", "x = 3|x = -6|x = 0", "$2x = -6 \\Rightarrow x = -3$"],
+            ["Löse $x^2+x=0$", "x=0 \\text{ oder } x=-1", "x=0 \\text{ oder } x=1|x=0|x=-1", "$x(x+1)=0$"],
+            ["Berechne $7 \\cdot 23$", "161", "141|151|171", "$7 \\cdot 20 + 7 \\cdot 3 = 140 + 21$"],
             ["Berechne $3\\% \\text{ von } 200$", "6", "3|60|15", "$1\\%$ sind $2$, also sind $3\\%$ dann $6$."],
             ["Multipliziere $(2x+3)^2$", "4x^2+12x+9", "4x^2+9|2x^2+12x+9|4x^2+6x+9", "1. binomische Formel: $(a+b)^2 = a^2+2ab+b^2$"],
+            ["Faktorisiere $3x^2+7x$", "x(3x+7)", "3x(x+7)|x(3x^2+7)|3(x^2+7x)", "$x$ ausklammern."],
+            ["Löse $2x-5=0$", "x = 2{,}5", "x = 5|x = -2{,}5|x = 2", "$2x = 5 \\Rightarrow x = 2{,}5$"],
+            ["Löse $x^2-2x=0$", "x=0 \\text{ oder } x=2", "x=0 \\text{ oder } x=-2|x=2|x=0", "$x(x-2)=0$"],
+            ["Löse $x^2=7$", "x = \\pm\\sqrt{7}", "x = \\sqrt{7}|x = 3{,}5|x = \\pm 3{,}5", "Wurzel ziehen führt zu zwei Lösungen."],
+            ["Löse $\\frac{1}{2}x^2=8$", "x = \\pm 4", "x = 4|x = 16|x = \\pm 16", "$x^2 = 16 \\Rightarrow x = \\pm 4$"],
+            ["Multipliziere $(x+5)(x-2)$", "x^2+3x-10", "x^2-10|x^2+7x-10|x^2-3x-10", "$x^2 - 2x + 5x - 10$"],
+
+            // --- SEITE 8 ---
+            ["Multipliziere $3x(x^2+2)$", "3x^3+6x", "3x^3+2|3x^2+6x|x^3+6x", "Jeden Term in der Klammer mit $3x$ multiplizieren."],
+            ["Löse $2x+1=x-1$", "x = -2", "x = 0|x = 2|x = -1", "$x$ abziehen und 1 abziehen: $x = -2$"],
+            ["Bestimme den Schnittpunkt mit der x-Achse: $y=x-5$", "x = 5", "x = -5|x = 0|y = -5", "$0 = x - 5 \\Rightarrow x = 5$"],
             ["Berechne $\\cos(90^\\circ)$", "0", "1|-1|0{,}5", "Am Einheitskreis ist der x-Wert bei 90° genau 0."],
             ["Löse $x^3-3x=0$", "x=0 \\text{ oder } x=\\pm\\sqrt{3}", "x=0 \\text{ oder } x=3|x=\\pm\\sqrt{3}|x=0", "$x(x^2-3)=0$"],
+            ["Schreibe mit einem Bruchstrich: $x+\\frac{1}{x+1}$", "\\frac{x^2+x+1}{x+1}", "\\frac{x+1}{x+1}|\\frac{x^2+1}{x+1}|\\frac{2x+1}{x+1}", "Erweitern: $\\frac{x(x+1)+1}{x+1}$"],
+            ["Löse $3x^2+4x=0$", "x=0 \\text{ oder } x=-\\frac{4}{3}", "x=0 \\text{ oder } x=\\frac{4}{3}|x=-\\frac{4}{3}|x=0", "$x(3x+4)=0$"],
+            ["Multipliziere $(2x+1)(x-1)$", "2x^2-x-1", "2x^2-1|2x^2+x-1|2x^2-2x-1", "$2x^2 - 2x + x - 1$"],
+            ["Löse $x-1=3x+4$", "x = -2{,}5", "x = 2{,}5|x = 1{,}5|x = -1{,}5", "$-2x = 5 \\Rightarrow x = -2{,}5$"],
             ["Bilde eine Stammfunktion zu $2x^3-4x$", "\\frac{1}{2}x^4-2x^2", "6x^2-4|\\frac{1}{4}x^4-2x^2|2x^4-4x^2", "Potenzregel für Integrale anwenden."],
+            ["Bestimme die Definitionsmenge $\\sqrt{x-1}$", "x \\geq 1", "x \\leq 1|x > 1|x \\neq 1", "Der Term unter der Wurzel darf nicht negativ sein."],
             ["Faktorisiere $4x^2-9$", "(2x+3)(2x-3)", "(2x-3)^2|(4x-9)(x+1)|(2x-9)(2x+9)", "3. binomische Formel: $a^2-b^2=(a+b)(a-b)$"],
-            ["Löse $\\frac{x^2+1}{x-2}=0$", "Keine Lösung", "x = \\pm 1|x = 2|x = -1", "$x^2+1=0$ hat keine reelle Lösung."],
+            ["Ergänze zu einem Quadrat: $x^2+...x+4$", "\\pm 4x", "4x|2x|8x", "Es kann $(x+2)^2 = x^2+4x+4$ oder $(x-2)^2 = x^2-4x+4$ sein."],
+
+            // --- SEITE 9 ---
+            ["Bestimme die Definitionsmenge: $\\frac{3x}{x^2-4}$", "x \\neq \\pm 2", "x \\neq 2|x \\neq -2|x > 2", "Der Nenner $x^2-4$ darf nicht 0 sein."],
+            ["Bilde eine Stammfunktion zu $6x^2+4x-5$", "2x^3+2x^2-5x", "12x+4|2x^3+4x^2-5|3x^3+2x^2-5x", "Potenzregel: Exponenten um 1 erhöhen und durch neuen Exponenten teilen."],
+            ["Multipliziere $x(x+1)(x-1)$", "x^3-x", "x^3-1|x^3+x|x^3-x^2-x", "Zuerst 3. binomische Formel: $x(x^2-1)$"],
+            ["Schreibe mit einem Bruchstrich: $\\frac{3}{x}-\\frac{2}{y}$", "\\frac{3y-2x}{xy}", "\\frac{1}{xy}|\\frac{3-2}{x-y}|\\frac{3y-2x}{x+y}", "Hauptnenner ist $xy$."],
+            ["Berechne $178+56$", "234", "224|244|236", "$178 + 50 = 228$, dann $+6 = 234$"],
+            ["Berechne $3 : \\frac{1}{2}$", "6", "1{,}5|3|1", "Teilen durch einen Bruch ist Multiplikation mit dem Kehrwert."],
+            ["Faktorisiere $3ab+18ac$", "3a(b+6c)", "3a(b+18c)|3(ab+6ac)|ab(3+18c)", "Größten gemeinsamen Teiler $3a$ ausklammern."],
+            ["Löse $|x|=1$", "x = \\pm 1", "x = 1|x = -1|x = 0", "Der Betrag von 1 und -1 ist jeweils 1."],
+            ["Multipliziere $x^2(ax+b)$", "ax^3+bx^2", "ax^2+bx^2|a^2x^3+bx^2|ax^3+b", "Jeden Summanden mit $x^2$ multiplizieren."],
+            ["Berechne $30\\% \\text{ von } 450$", "135", "150|120|145", "$10\\%$ sind $45$, also sind $30\\%$ dann $3 \\cdot 45$."],
+            ["Bestimme die Schnittpunkte mit der x-Achse: $y=2x^2+4$", "Keine", "x = \\pm 2|x = 0|x = -2", "$0 = 2x^2+4 \\Rightarrow 2x^2 = -4$ hat keine reelle Lösung."],
+            ["Faktorisiere $\\frac{1}{4}x^2-9$", "(\\frac{1}{2}x+3)(\\frac{1}{2}x-3)", "(\\frac{1}{4}x+3)(\\frac{1}{4}x-3)|(\\frac{1}{2}x-3)^2|\\frac{1}{4}(x^2-36)", "3. binomische Formel."],
+
+            // --- SEITE 10 ---
+            ["Berechne $\\sqrt{1{,}44}$", "1{,}2", "0{,}12|12|1{,}4", "$12^2 = 144$, also $1{,}2^2 = 1{,}44$"],
+            ["Berechne $13-24$", "-11", "-9|-13|11", "$13 - 13 - 11 = -11$"],
+            ["Löse: $\\frac{x^2+1}{x-2}=0$", "Keine Lösung", "x = \\pm 1|x = 2|x = -1", "Zähler $x^2+1=0$ hat keine reelle Lösung."],
+            ["Löse $3x+5 < 20$", "x < 5", "x > 5|x < 15|x < 8", "$3x < 15 \\Rightarrow x < 5$"],
             ["Löse die Klammer auf: $(a^2b)^3$", "a^6b^3", "a^5b^3|a^6b|a^2b^3", "Potenzgesetze: Exponenten werden multipliziert."],
+            ["Sei $f(x)=x^3-4x^2+x+1$. Berechne $f(3)$", "-5", "-7|1|5", "$27 - 36 + 3 + 1 = -5$"],
+            ["Löse $3x^3+6x=0$", "x = 0", "x=0 \\text{ oder } x=-2|x = \\pm\\sqrt{2}|x = -2", "$3x(x^2+2)=0$. Die Klammer wird nie 0."],
+            ["Berechne $15\\% \\text{ von } 120$", "18", "15|12|24", "$10\\%$ sind 12, $5\\%$ sind 6. Zusammen 18."],
+            ["Multipliziere $(3x+1)(3x-1)$", "9x^2-1", "9x^2+1|3x^2-1|9x^2-6x-1", "3. binomische Formel."],
+            ["Schreibe mit einem Bruchstrich: $\\frac{a}{x}+\\frac{1}{x^2}$", "\\frac{ax+1}{x^2}", "\\frac{a+1}{x^2}|\\frac{a+1}{x^3}|\\frac{ax+1}{x^3}", "Den ersten Bruch mit $x$ erweitern."],
+            ["Berechne $21 \\cdot 17$", "357", "337|367|347", "3. binomische Formel: $(19+2)(19-2)$ oder einfach $21 \\cdot 10 + 21 \\cdot 7$"],
+            ["Faktorisiere $3a^2b+6b$", "3b(a^2+2)", "3ab(a+2)|b(3a^2+6)|3(a^2b+2b)", "Größten gemeinsamen Teiler $3b$ ausklammern."],
+            ["Bestimme den Schnittpunkt mit der x-Achse: $y=-2x+4$", "x = 2", "x = -2|x = 4|x = 0", "$0 = -2x+4 \\Rightarrow 2x = 4$"],
+
+            // --- SEITE 11 ---
             ["Bestimme die Steigung durch $P(1|2)$ und $Q(3|6)$", "m = 2", "m = \\frac{1}{2}|m = -2|m = 4", "$m = \\frac{y_2-y_1}{x_2-x_1} = \\frac{6-2}{3-1} = \\frac{4}{2} = 2$"],
             ["Schreibe als einfache Potenz: $\\frac{10^2}{5^2}$", "2^2", "5^2|2^0|10^0", "$\\left(\\frac{10}{5}\\right)^2 = 2^2$"],
             ["Löse nach r auf: $V=\\pi \\cdot r^2 \\cdot h$", "r = \\sqrt{\\frac{V}{\\pi h}}", "r = \\frac{V}{\\pi h}|r = \\sqrt{V - \\pi h}|r = \\frac{\\sqrt{V}}{\\pi h}", "Durch $\\pi h$ teilen und Wurzel ziehen."],
+            ["Löse $x(3x+6)=0$", "x=0 \\text{ oder } x=-2", "x=0 \\text{ oder } x=2|x=-2|x=0", "Satz vom Nullprodukt: Entweder $x=0$ oder $3x+6=0$"],
+            ["Bestimme a, sodass $P(2|5)$ auf $y=a\\cdot x^2+1$ liegt", "a = 1", "a = 2|a = -1|a = 0{,}5", "Einsetzen: $5 = a(2^2) + 1 \\Rightarrow 4 = 4a$"],
+            ["Bestimme einen Näherungswert: $\\frac{3{,}71 \\cdot 8{,}26}{6{,}15}$", "ca. 5", "ca. 2|ca. 10|ca. 8", "Grob gerundet: $\\frac{4 \\cdot 8}{6} = \\frac{32}{6} \\approx 5{,}3$"],
+            ["Schreibe als Dezimalzahl: $\\frac{2}{5}$", "0{,}4", "0{,}2|0{,}25|2{,}5", "Erweitern auf Zehntel: $\\frac{4}{10} = 0{,}4$"],
+            ["Bestimme $f(2)$ für $f(x)=-x^2+4x+3$", "7", "11|3|-1", "$- (2^2) + 4(2) + 3 = -4 + 8 + 3 = 7$"],
+
+            // --- SEITE 12 ---
+            ["$P(1|1)$ liegt auf $y=2x+n$. Bestimme $n$", "n = -1", "n = 1|n = 0|n = 2", "Einsetzen: $1 = 2(1) + n \\Rightarrow 1 = 2 + n$"],
+            ["Löse $3x^2-2=0$", "x = \\pm\\sqrt{\\frac{2}{3}}", "x = \\pm\\frac{2}{3}|x = \\sqrt{\\frac{2}{3}}|x = \\pm\\frac{4}{9}", "$3x^2 = 2 \\Rightarrow x^2 = \\frac{2}{3}$"],
+            ["Multipliziere $4x(x-1)$", "4x^2-4x", "4x^2-1|4x-4|x^2-4x", "Ausmultiplizieren."],
+            ["Berechne $27 \\cdot 11$", "297", "287|307|277", "$27 \\cdot 10 + 27 = 270 + 27 = 297$"],
+            ["Löse nach r auf: $A=\\pi \\cdot r^2$", "r = \\sqrt{\\frac{A}{\\pi}}", "r = \\frac{A}{\\pi}|r = \\frac{\\sqrt{A}}{\\pi}|r = \\sqrt{A - \\pi}", "Durch $\\pi$ teilen und Wurzel ziehen."],
+            ["Faktorisiere $3x^3a+2x^2b+cx$", "x(3x^2a+2xb+c)", "x^2(3xa+2b)+cx|a(3x^3)+b(2x^2)|x(3x^2a+2xb)", "Das kleinste gemeinsame $x$ ausklammern."],
+            ["Löse $-2x+3 < 5$", "x > -1", "x < -1|x > 1|x < 1", "$-2x < 2$. Beim Teilen durch eine negative Zahl dreht sich das Zeichen!"],
+            ["Schreibe als einen Bruch $3a-\\frac{a}{4}$", "\\frac{11a}{4}", "\\frac{2a}{4}|\\frac{3a-1}{4}|\\frac{12a}{4}", "Gleichnamig machen: $\\frac{12a}{4} - \\frac{a}{4}$"],
+            ["Multipliziere $(4+a)(7-b)$", "28-4b+7a-ab", "28-ab|28+4b-7a-ab|11-a-b", "Jeden Term mit jedem multiplizieren."],
+            ["Kürze $\\frac{a^2+3a}{a^3}$", "\\frac{a+3}{a^2}", "\\frac{1+3a}{a^2}|\\frac{a+3}{a}|\\frac{4a}{a^3}", "$a$ ausklammern und kürzen."],
+
+            // --- SEITE 13 ---
+            ["Löse $|x-1|=1$", "x=2 \\text{ oder } x=0", "x=1|x=2 \\text{ oder } x=-2|x=0 \\text{ oder } x=-1", "Der Term in den Betragsstrichen muss 1 oder -1 sein."],
+            ["Berechne $17 \\cdot 31$", "527", "517|537|507", "$17 \\cdot 30 + 17 = 510 + 17$"],
+            ["Löse $2 \\cdot 3^x = 54$", "x = 3", "x = 9|x = 27|x = 4", "$3^x = 27$, und $3^3 = 27$"],
+            ["Bestimme Näherungswert: $\\frac{(1{,}8 \\cdot 10^2) \\cdot (3{,}4 \\cdot 10^7)}{2{,}7 \\cdot 10^{-3}}$", "ca. 2 \\cdot 10^{12}", "ca. 2 \\cdot 10^6|ca. 5 \\cdot 10^9|ca. 10^{10}", "$\\frac{2 \\cdot 3}{3} \\cdot \\frac{10^9}{10^{-3}} \\approx 2 \\cdot 10^{12}$"],
+            ["Löse nach r auf: $V=\\frac{4}{3}\\pi r^3$", "r = \\sqrt[3]{\\frac{3V}{4\\pi}}", "r = \\sqrt[3]{\\frac{4V}{3\\pi}}|r = \\frac{3V}{4\\pi}|r = \\sqrt{\\frac{3V}{4\\pi}}", "Mit Kehrbruch multiplizieren und dritte Wurzel ziehen."],
+            ["Schreibe als Dezimalzahl: $\\frac{3}{4}$", "0{,}75", "0{,}34|1{,}33|0{,}5", "Bekannter Standardbruch."],
+            ["Multipliziere $(x-1)(3x+1)$", "3x^2-2x-1", "3x^2-1|3x^2+2x-1|3x^2-4x-1", "$3x^2 + x - 3x - 1$"],
+            ["Berechne $f(1)$ für $f(x)=x^3-3x^2+x+6$", "5", "7|-1|6", "$1 - 3 + 1 + 6 = 5$"],
+            ["Löse $x^2=8$", "x = \\pm 2\\sqrt{2}", "x = 4|x = \\pm 4|x = \\pm\\sqrt{4}", "$\\sqrt{8} = \\sqrt{4 \\cdot 2} = 2\\sqrt{2}$"],
+            ["Bestimme D und löse: $\\frac{2x-1}{x+1}=0$", "x = 0{,}5 \\quad (D: x \\neq -1)", "x = -1|x = -0{,}5|x = 1", "Zähler muss 0 sein: $2x-1=0 \\Rightarrow x=0{,}5$"],
+
+            // --- SEITE 14 ---
+            ["Zerlege in Linearfaktoren $x^2-5x+6$", "(x-2)(x-3)", "(x-6)(x+1)|(x+2)(x+3)|(x-5)(x+1)", "Satz von Vieta: $(-2)+(-3)=-5$ und $(-2)(-3)=6$"],
+            ["Berechne $15\\% \\text{ von } 400$", "60", "15|40|45", "$10\\%$ sind 40, $5\\%$ sind 20."],
+            ["Steigung der Geraden durch $P(-1|3)$ und $Q(1|1)$", "m = -1", "m = 1|m = -2|m = 2", "$m = \\frac{1-3}{1 - (-1)} = \\frac{-2}{2} = -1$"],
+            ["Löse nach h auf: $V=\\pi \\cdot r^2 \\cdot h$", "h = \\frac{V}{\\pi r^2}", "h = \\frac{V}{\\pi h}|h = V - \\pi r^2|h = \\sqrt{\\frac{V}{\\pi}}", "Einfaches Umstellen."],
+            ["Multipliziere $(ax+1)(a+2)$", "a^2x+2ax+a+2", "a^2x+2|a^2x+2a+2|ax^2+2a+2", "Ausmultiplizieren."],
+            ["Berechne $\\tan(45^\\circ)$", "1", "0|-1|0{,}5", "Sinus und Kosinus sind bei 45° gleich groß."],
+            ["Löse $3a-5=-1$", "a = \\frac{4}{3}", "a = \\frac{3}{4}|a = 2|a = -2", "$3a = 4 \\Rightarrow a = \\frac{4}{3}$"],
+            ["Bestimme b, sodass $P(4|9)$ auf $y=\\frac{1}{2}x^2+b$ liegt", "b = 1", "b = 5|b = -1|b = 0", "Einsetzen: $9 = \\frac{1}{2}(16) + b \\Rightarrow 9 = 8 + b$"],
+            ["Bestimme den Schnittpunkt mit der x-Achse: $y=-3x+9$", "x = 3", "x = -3|x = 9|x = 0", "$0 = -3x+9 \\Rightarrow 3x = 9$"],
+
+            // --- SEITE 15 ---
+            ["Steigung der Geraden durch $P(1|4)$ und $Q(3|2)$", "m = -1", "m = 1|m = -2|m = 2", "$m = \\frac{2-4}{3-1} = \\frac{-2}{2} = -1$"],
             ["Bestimme $\\lim_{n\\to\\infty} \\frac{2n^2+n}{n-1}$", "\\infty", "2|0|1", "Der Zählergrad (2) ist größer als der Nennergrad (1)."],
+            ["Löse nach r auf: $V=\\frac{1}{3}\\pi r^2 h$", "r = \\sqrt{\\frac{3V}{\\pi h}}", "r = \\frac{3V}{\\pi h}|r = \\sqrt{\\frac{V}{3\\pi h}}|r = \\sqrt{\\frac{3\\pi h}{V}}", "Bruch auflösen und Wurzel ziehen."],
+            ["Löse $|x| > 2$", "x > 2 \\text{ oder } x < -2", "x > 2|-2 < x < 2|x < 2", "Der Abstand zur Null muss größer als 2 sein."],
+            ["Kürze $\\frac{3x^2+x}{3x+1}$", "x", "3x|x^2|1", "$x$ im Zähler ausklammern: $\\frac{x(3x+1)}{3x+1}$"],
+            ["Schreibe als einfache Potenz $(\\sqrt{a})^4$", "a^2", "a^4|a^8|a", "$(\\sqrt{a})^4 = (a^{0{,}5})^4 = a^2$"],
+            ["Bestimme Näherungswert: $\\frac{2{,}18 \\cdot 3{,}94}{4{,}12}$", "ca. 2", "ca. 4|ca. 8|ca. 1", "Grob gerundet: $\\frac{2 \\cdot 4}{4} = 2$"],
+            ["Bilde die Ableitung zu $3x^2-2x+4$", "6x-2", "3x-2|6x|x^2-2", "Potenzregel anwenden."],
+            ["Bestimme die x-Koordinate des Scheitelpunktes: $y=x^2-4x$", "x = 2", "x = -2|x = 4|x = -4", "$x_S = -\\frac{p}{2} = -\\frac{-4}{2} = 2$"],
+            ["Sei $f(x)=x^3-2x^2+x-1$. Berechne $f(2)$", "1", "3|-1|5", "$8 - 8 + 2 - 1 = 1$"],
+
+            // --- SEITE 16 ---
+            ["Multipliziere $(3a+4)(2a-1)$", "6a^2+5a-4", "6a^2-4|6a^2+11a-4|6a^2-a-4", "Ausmultiplizieren."],
+            ["Faktorisiere $x^2-4x+3$", "(x-1)(x-3)", "(x+1)(x-3)|(x-4)(x+1)|(x-1)(x+3)", "Satz von Vieta."],
+            ["Löse $2x+3=x-7$", "x = -10", "x = 10|x = -4|x = 4", "$x$ abziehen, 3 abziehen."],
+            ["Berechne $14 \\cdot 32$", "448", "428|468|458", "$14 \\cdot 30 + 14 \\cdot 2 = 420 + 28$"],
             ["Löse nach l auf: $d^2=l^2+b^2$", "l = \\sqrt{d^2-b^2}", "l = d - b|l = \\sqrt{d^2+b^2}|l = d^2-b^2", "Pythagoras umstellen."],
+            ["Bestimme den Schnittpunkt mit der x-Achse: $y=3x+9$", "x = -3", "x = 3|x = 9|y = 9", "$0 = 3x+9 \\Rightarrow 3x = -9$"],
             ["Berechne $12\\% \\text{ von } 600$", "72", "12|60|720", "$1\\%$ sind $6$, also sind $12\\%$ dann $12 \\cdot 6 = 72$"],
+            ["Löse $3x^2=12$", "x = \\pm 2", "x = 2|x = \\pm 4|x = 4", "$x^2 = 4$"],
+            ["Schreibe auf einen Bruchstrich: $\\frac{x}{x+1}+\\frac{x}{x-1}$", "\\frac{2x^2}{x^2-1}", "\\frac{2x}{x^2-1}|\\frac{2x}{2x}|\\frac{x^2}{x^2-1}", "Hauptnenner ist $(x+1)(x-1) = x^2-1$."],
+            ["Faktorisiere $18x^3+3x^2$", "3x^2(6x+1)", "3x^2(6x)|18x^2(x+1)|3x(6x^2+x)", "Größten gemeinsamen Teiler $3x^2$ ausklammern."],
+            ["Berechne $\\log_5(625)$", "4", "5|25|3", "$5^4 = 625$"],
+            ["Löse $-x+2 > 4$", "x < -2", "x > -2|x < 2|x > 2", "$-x > 2$. Beim Multiplizieren mit -1 dreht sich das Zeichen!"],
+            ["Kürze $\\frac{3x^2+x}{2x}$", "\\frac{3x+1}{2}", "\\frac{3x}{2}|\\frac{3x^2+1}{2}|3x+x", "$x$ im Zähler ausklammern und kürzen."],
+
+            // --- SEITE 17 ---
+            ["Multipliziere $\\frac{a}{b} \\cdot \\frac{c}{a}$", "\\frac{c}{b}", "\\frac{ac}{ab}|\\frac{a}{c}|\\frac{b}{c}", "$a$ kürzt sich weg."],
+            ["Löse $x^2=64$", "x = \\pm 8", "x = 8|x = 32|x = \\pm 32", "Wurzel ziehen liefert immer zwei Lösungen."],
+            ["Multipliziere $(x-1)(x-3)$", "x^2-4x+3", "x^2-3|x^2+4x-3|x^2+3", "Ausmultiplizieren."],
+            ["Löse nach r auf: $\\frac{2h}{r}=7$", "r = \\frac{2h}{7}", "r = \\frac{7}{2h}|r = 14h|r = 7 - 2h", "Mal $r$ und geteilt durch 7."],
+            ["Löse $2x-5=1$", "x = 3", "x = -2|x = 2|x = 6", "$2x = 6$"],
+            ["Faktorisiere $x^2-6$", "(x-\\sqrt{6})(x+\\sqrt{6})", "(x-3)(x+2)|(x-6)(x+1)|(x-3)^2", "3. binomische Formel, auch wenn es keine Quadratzahl ist."],
+            ["Löse nach y auf: $2y+2x=6$", "y = 3-x", "y = 3-2x|y = 6-2x|y = x-3", "Durch 2 teilen: $y+x=3$"],
+            ["Bestimme die Schnittpunkte mit der x-Achse: $y=2x^2-4x$", "x=0 \\text{ und } x=2", "x=0 \\text{ und } x=-2|x=2|x=\\pm 2", "$2x(x-2)=0$"],
+            ["Zwischen welchen ganzen Zahlen liegt $\\sqrt{180}$?", "13 und 14", "12 und 13|14 und 15|18 und 19", "$13^2=169$ und $14^2=196$"],
             ["Löse nach x auf: $3^x=17$", "x = \\log_3(17)", "x = \\frac{17}{3}|x = \\sqrt[3]{17}|x = \\log_{17}(3)", "Anwendung der Definition des Logarithmus."],
+            ["Schreibe als einfache Potenz: $a^3 \\cdot a^2 : a^4$", "a", "a^2|a^9|a^{-1}", "Exponenten addieren/subtrahieren: $3+2-4 = 1$"],
+
+            // --- SEITE 18 ---
+            ["Löse $3x-6=9$", "x = 5", "x = 1|x = 3|x = -1", "$3x = 15$"],
+            ["Multipliziere $(2x+1)(x+2)$", "2x^2+5x+2", "2x^2+2|2x^2+3x+2|x^2+5x+2", "$2x^2 + 4x + x + 2$"],
+            ["Löse $2x^2-x=0$", "x=0 \\text{ oder } x=0{,}5", "x=0 \\text{ oder } x=-0{,}5|x=0{,}5|x=0 \\text{ oder } x=2", "$x(2x-1)=0$"],
+            ["Schreibe auf einen Bruchstrich $\\frac{1}{ab}+\\frac{2}{a}$", "\\frac{1+2b}{ab}", "\\frac{3}{ab}|\\frac{3}{a^2b}|\\frac{1+2a}{ab}", "Zweiten Bruch mit $b$ erweitern."],
+            ["Faktorisiere $x^2+6x+9$", "(x+3)^2", "(x+6)^2|(x+9)^2|(x+3)(x-3)", "1. binomische Formel."],
+            ["Bestimme D und löse $\\frac{x+2}{x-1}=0$", "x=-2 \\quad (D: x \\neq 1)", "x=1|x=2|x=-2 \\text{ und } x=1", "Zähler muss 0 sein."],
+            ["Schreibe als Bruch 0,8", "\\frac{4}{5}", "\\frac{1}{8}|\\frac{8}{100}|\\frac{3}{4}", "$\\frac{8}{10}$ gekürzt."],
+            ["Löse $\\frac{1}{3}x^2-3x=0$", "x=0 \\text{ oder } x=9", "x=0 \\text{ oder } x=3|x=9|x=0 \\text{ oder } x=-9", "$x(\\frac{1}{3}x-3)=0$"],
+            ["Berechne $16 \\cdot 24$", "384", "364|394|386", "3. binomische Formel: $(20-4)(20+4) = 400 - 16$"],
+            ["Multipliziere $2(x+2)(x-2)$", "2x^2-8", "2x^2-4|2x^2+8|4x^2-8", "Zuerst binomische Formel, dann mal 2."],
+            ["Löse nach a auf $a^2-b^2=c^2$", "a = \\pm\\sqrt{b^2+c^2}", "a = c+b|a = \\pm(c+b)|a = \\sqrt{c^2-b^2}", "Wurzel ziehen."],
             ["Wie viel Prozent sind 40 von 160?", "25\\%", "40\\%|20\\%|33{,}3\\%", "$\\frac{40}{160} = \\frac{1}{4} = 25\\%$"],
-            ["Schreibe als eine Potenz: $\\frac{10^3 \\cdot 10^{-5}}{10^2}$", "10^{-4}", "10^{-10}|10^0|10^{-2}", "Zähler: $10^{-2}$. Geteilt durch $10^2$ ergibt $10^{-4}$"],
-            ["Berechne $\\lg(500) - \\lg(5)$", "2", "100|1|0", "Logarithmusgesetz: $\\lg(\\frac{500}{5}) = \\lg(100) = 2$"]
+
+            // --- SEITE 19 & 21 (sind identisch) ---
+            ["Löse $4x-6=8$", "x = 3{,}5", "x = 0{,}5|x = 2|x = 4", "$4x = 14$"],
+            ["Schreibe als einen Bruch $\\frac{3}{a^3}-\\frac{1}{a}$", "\\frac{3-a^2}{a^3}", "\\frac{2}{a^2}|\\frac{2}{a^3}|\\frac{3-a}{a^3}", "Zweiten Bruch mit $a^2$ erweitern."],
+            ["Multipliziere $(x-6)(x+2)$", "x^2-4x-12", "x^2-12|x^2+4x-12|x^2-8x-12", "Ausmultiplizieren."],
+            ["Ergänze zu einem Quadrat $x^2+10x$", "x^2+10x+25", "x^2+10x-25|x^2+10x+100|x^2+10x+5", "Hälfte von 10 zum Quadrat."],
+            ["Kürze $\\frac{b+b^2}{2b}$", "\\frac{1+b}{2}", "\\frac{1+b^2}{2}|\\frac{b^2}{2}|\\frac{b}{2}", "$b$ im Zähler ausklammern."],
+            ["Bestimme die Definitionsmenge $\\sqrt{x+3}$", "x \\geq -3", "x \\leq -3|x > -3|x \\neq -3", "Unter der Wurzel darf nichts Negatives stehen."],
+            ["Löse $2x-1=x+1$", "x = 2", "x = 0|x = -2|x = 1", "$x$ abziehen und 1 addieren."],
+            ["Berechne $\\frac{5}{6}-\\frac{2}{3}$", "\\frac{1}{6}", "\\frac{3}{-3}|\\frac{3}{6}|\\frac{1}{3}", "Hauptnenner 6: $\\frac{5}{6} - \\frac{4}{6}$"],
+            ["Sei $f(x)=2x^2-x+1$. Berechne $f(-1)$", "4", "2|0|6", "$2(1) - (-1) + 1 = 2+1+1 = 4$"],
+            ["Bestimme den Schnittpunkt mit der x-Achse: $y=2x-6$", "x = 3", "x = -3|x = 6|y = -6", "$0 = 2x-6 \\Rightarrow 2x = 6$"],
+            ["Löse die Klammer auf $(2x^2y^{-1})^3$", "\\frac{8x^6}{y^3}", "6x^6y^{-3}|8x^5y^{-3}|2x^6y^{-3}", "Jeden Faktor in der Klammer hoch 3."],
+            ["Löse $2x-3 > 5$", "x > 4", "x < 4|x > 1|x > 8", "$2x > 8$"],
+
+            // --- SEITE 20 ---
+            ["Löse $2x^2+4x=0$", "x=0 \\text{ oder } x=-2", "x=0 \\text{ oder } x=2|x=2|x=-2", "$2x(x+2)=0$"],
+            ["Berechne $16 \\cdot 21$", "336", "316|326|346", "$16 \\cdot 20 + 16 = 320 + 16$"],
+            ["Schreibe als eine Potenz $\\frac{10^3 \\cdot 10^{-5}}{10^2}$", "10^{-4}", "10^{-10}|10^0|10^{-2}", "Zähler: $10^{-2}$. Geteilt durch $10^2$ ergibt $10^{-4}$"],
+            ["Löse $x^2-25=0$", "x = \\pm 5", "x = 5|x = 25|x = \\pm 25", "$x^2 = 25$"],
+            ["Multipliziere $(2x-1)(2+1)$", "6x-3", "6x-1|2x+1|4x-2", "Die zweite Klammer ist einfach 3. Also $3(2x-1)$."],
+            ["Berechne $8\\% \\text{ von } 150$", "12", "8|15|10", "$1\\%$ sind $1{,}5$. $8 \\cdot 1{,}5 = 12$"],
+            ["Löse $2x^2+2=0$", "Keine Lösung", "x = \\pm 1|x = -1|x = 0", "$2x^2 = -2$ hat reell keine Lösung."],
+            ["Faktorisiere $3a^3b-6ab^2$", "3ab(a^2-2b)", "3a^2b(a-2b)|3ab(a^2-2)|ab(3a^2-6b)", "Größten gemeinsamen Teiler $3ab$ ausklammern."],
+            ["Schreibe auf einen Bruchstrich $\\frac{2a}{b}+\\frac{1}{a}$", "\\frac{2a^2+b}{ab}", "\\frac{2a+1}{ab}|\\frac{2a^2+1}{ab}|\\frac{2a+b}{ab}", "Erster Bruch mit $a$, zweiter mit $b$ erweitern."],
+            ["Bestimme $\\log_2(64)$", "6", "8|32|12", "Frage: 2 hoch was ist 64? $2^6 = 64$"],
+            ["Löse $\\frac{x}{4}=\\frac{5}{12}$", "x = \\frac{5}{3}", "x = \\frac{20}{12}|x = \\frac{5}{48}|x = 3", "Mal 4 rechnen: $x = \\frac{20}{12}$ und kürzen."],
+            ["Berechne $\\lg(500) - \\lg(5)$", "2", "100|1|0", "Logarithmusgesetz: $\\lg(\\frac{500}{5}) = \\lg(100) = 2$"],
+            ["Löse nach b auf $a^2+b^2=1$", "b = \\pm\\sqrt{1-a^2}", "b = 1-a|b = \\sqrt{1-a^2}|b = 1-a^2", "Minus $a^2$ und Wurzel ziehen."],
+
+            // --- SEITE 22 ---
+            ["Löse $|x|=2$", "x = \\pm 2", "x = 2|x = -2|x = 4", "Der Betrag von 2 und -2 ist jeweils 2."],
+            ["Schreibe als Summe $\\frac{x+1}{x^2}$", "\\frac{1}{x} + \\frac{1}{x^2}", "x + \\frac{1}{x^2}|\\frac{1}{x} + 1|x^3 + x^2", "Bruch in zwei Brüche aufteilen und kürzen."],
+            ["Schreibe als eine Potenz $\\frac{10^2}{10^{-3}}$", "10^5", "10^{-1}|10^{-6}|10^1", "Exponenten subtrahieren: $2 - (-3) = 5$"],
+            ["Löse $3x+2=2x$", "x = -2", "x = 2|x = 0|x = -1", "$2x$ abziehen und 2 rüberbringen."],
+            ["Schreibe mit einem Bruchstrich $\\frac{a}{b}+\\frac{b}{a}$", "\\frac{a^2+b^2}{ab}", "\\frac{a+b}{ab}|\\frac{a^2+b^2}{a+b}|1", "Über Kreuz erweitern."],
+            ["Kürze $\\frac{a^3+a^2}{a^2}$", "a+1", "a|a^2+1|a^3+1", "$a^2$ im Zähler ausklammern und kürzen."],
+            ["Sei $f(x)=x^2+3x-1$. Berechne $f(-2)$", "-3", "-11|1|3", "$(-2)^2 + 3(-2) - 1 = 4 - 6 - 1 = -3$"],
+            ["Löse $-3x < 6$", "x > -2", "x < -2|x > 2|x < 2", "Beim Teilen durch -3 dreht sich das Ungleichheitszeichen."],
+            ["Bestimme die Nullstellen $f(x)=3x^2+6$", "Keine Nullstellen", "x = \\pm\\sqrt{2}|x = -\\sqrt{2}|x = 0", "$3x^2 = -6$ hat keine reelle Lösung."],
+            ["Bestimme die Länge der Diagonalen im Quadrat mit Seitenlänge 4", "4\\sqrt{2}", "8|16|\\sqrt{8}", "Pythagoras: $d^2 = 4^2+4^2 = 32 \\Rightarrow d = \\sqrt{32} = 4\\sqrt{2}$"]
         ];
 
         // Daten parsen für das Spiel
@@ -335,9 +552,9 @@
 
             currentAnswerObj = { text: textToShow, isCorrect: isCorrect };
 
-            // Create answer element
+            // Create answer element (angepasste Schriftgröße und Begrenzung)
             const el = document.createElement('div');
-            el.className = 'absolute top-1/2 left-1/2 text-[clamp(2rem,5vw,4.5rem)] font-bold bg-slate-700 px-8 py-6 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.8)] border-2 border-slate-600 answer-zoom text-center w-max max-w-[90%]';
+            el.className = 'absolute top-1/2 left-1/2 text-[clamp(1.2rem,2.5vw,3.5rem)] font-bold bg-slate-700 px-4 py-3 md:px-8 md:py-6 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.8)] border-2 border-slate-600 answer-zoom text-center w-max max-w-[95%] flex justify-center items-center overflow-hidden';
             el.innerHTML = renderMath(textToShow);
             
             arena.appendChild(el);
