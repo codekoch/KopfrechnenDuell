@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kopfalgebra Attack</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <style>
+        /* Verhindert Scrollen und Zoomen auf dem iPad */
+        body {
+            overscroll-behavior-y: contain;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* Animation für das Hereinfliegen der Antworten (Jack Attack Style) */
+        @keyframes jackZoom {
+            0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0; filter: blur(10px); }
+            40% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; filter: blur(0px); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        .answer-zoom {
+            animation: jackZoom 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Feedback Animationen */
+        @keyframes popScore {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        .animate-score {
+            animation: popScore 1s ease-out forwards;
+        }
+        
+        .katex-display {
+            margin: 0 !important;
+        }
+
+        /* Verhindert das Umbrechen innerhalb von Formeln */
+        .katex {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white overflow-hidden h-screen w-screen flex flex-col font-sans">
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="absolute inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center">
+        <h1 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-blue-500 mb-8 text-center px-4">
+            Kopfalgebra<br>Attack
+        </h1>
+        <p class="text-xl md:text-2xl text-slate-400 mb-12 max-w-2xl text-center px-6">
+            Ein 2-Spieler Duell. Das iPad liegt flach zwischen euch. 
+            Tippt auf eure Seite, sobald die <b>richtige</b> Antwort in der Mitte erscheint. 
+            Falsche Antworten geben Minuspunkte!
+        </p>
+        <button onclick="startGame()" class="px-12 py-6 bg-green-500 hover:bg-green-400 text-white text-3xl font-bold rounded-full shadow-[0_0_40px_rgba(34,197,94,0.5)] transition-transform transform hover:scale-105 active:scale-95">
+            SPIEL STARTEN
+        </button>
+    </div>
+
+    <!-- GAME UI -->
+    <div id="game-ui" class="flex-1 flex w-full h-full hidden">
+        
+        <!-- PLAYER 1 (LEFT) -->
+        <div id="btn-p1" class="w-1/4 h-full bg-red-700 relative flex flex-col justify-center items-center shadow-[inset_-15px_0_30px_rgba(0,0,0,0.6)] cursor-pointer">
+            <h2 class="text-4xl md:text-6xl font-black text-white/30 tracking-widest uppercase rotate-180" style="writing-mode: vertical-rl;">Spieler 1</h2>
+            <div id="score-p1" class="text-6xl md:text-8xl font-black mt-8 text-white drop-shadow-lg">0</div>
+            <div id="ready-p1" class="absolute bottom-[15%] text-lg md:text-2xl font-bold text-white/50 pointer-events-none transition-colors duration-300 text-center leading-tight"></div>
+            
+            <div id="flash-p1" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-200"></div>
+            <div id="floating-score-p1" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-7xl font-black pointer-events-none opacity-0"></div>
+        </div>
+
+        <!-- CENTER ARENA -->
+        <div class="w-2/4 h-full bg-slate-800 flex flex-col relative shadow-2xl z-10 border-x-4 border-slate-950">
+            
+            <!-- Question Box -->
+            <div class="h-1/3 flex items-center justify-center p-4 md:p-6 bg-slate-800 border-b-2 border-slate-700 shadow-md">
+                <div id="question-text" class="text-[clamp(1.2rem,2.5vw,2.5rem)] leading-snug font-bold text-center w-full flex flex-col justify-center items-center"></div>
+            </div>
+
+            <!-- Jack Attack Answer Area -->
+            <div id="answer-arena" class="h-1/3 relative flex items-center justify-center overflow-hidden">
+                <!-- Answers will pop up here via JS -->
+            </div>
+
+            <!-- Feedback & Next Button Area -->
+            <div class="h-1/3 p-4 md:p-6 flex flex-col items-center justify-center bg-slate-800 border-t-2 border-slate-700">
+                <div id="explanation-box" class="text-xl md:text-3xl text-center text-slate-300 hidden mb-6 font-medium px-4"></div>
+                <button id="next-btn" onclick="nextRound()" class="hidden px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white text-xl md:text-2xl font-bold rounded-xl shadow-lg transform transition active:scale-95">
+                    Nächste Aufgabe
+                </button>
+            </div>
+        </div>
+
+        <!-- PLAYER 2 (RIGHT) -->
+        <div id="btn-p2" class="w-1/4 h-full bg-blue-700 relative flex flex-col justify-center items-center shadow-[inset_15px_0_30px_rgba(0,0,0,0.6)] cursor-pointer">
+            <h2 class="text-4xl md:text-6xl font-black text-white/30 tracking-widest uppercase" style="writing-mode: vertical-rl;">Spieler 2</h2>
+            <div id="score-p2" class="text-6xl md:text-8xl font-black mt-8 text-white drop-shadow-lg">0</div>
+            <div id="ready-p2" class="absolute bottom-[15%] text-lg md:text-2xl font-bold text-white/50 pointer-events-none transition-colors duration-300 text-center leading-tight"></div>
+            
+            <div id="flash-p2" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-200"></div>
+            <div id="floating-score-p2" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-7xl font-black pointer-events-none opacity-0"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- MASSIVE DATA EXTRACTION FROM PDF ---
+        // Format: [Frage, Richtige Antwort, Falsche Antworten (Pipe-separiert), Erklärung]
+        const rawData = [
+            // Grafische Aufgaben mit SVGs
+            ["Welche Begriffe passen zur Figur?<br><svg viewBox='0 0 100 50' class='max-h-[14vh] mx-auto my-4 drop-shadow-lg text-yellow-400'><polygon points='20,40 80,40 90,10 30,10' fill='none' stroke='currentColor' stroke-width='4'/></svg>", "Parallelogramm, Viereck", "Raute, Rechteck|Quadrat, Raute|Rechteck, Viereck", "Ein Parallelogramm ist ein Viereck mit parallelen Gegenseiten."],
+            ["Welche Bezeichnungen haben die Geraden am Kreis?<br><svg viewBox='0 0 100 100' class='max-h-[16vh] mx-auto my-4 drop-shadow-lg text-blue-300'><circle cx='50' cy='50' r='30' fill='none' stroke='currentColor' stroke-width='3'/><line x1='10' y1='10' x2='20' y2='90' stroke='currentColor' stroke-width='3'/><text x='10' y='10' fill='currentColor' font-size='12' font-weight='bold'>1</text><line x1='30' y1='0' x2='40' y2='100' stroke='currentColor' stroke-width='3'/><text x='35' y='10' fill='currentColor' font-size='12' font-weight='bold'>2</text><line x1='60' y1='0' x2='90' y2='90' stroke='currentColor' stroke-width='3'/><text x='85' y='10' fill='currentColor' font-size='12' font-weight='bold'>3</text></svg>", "1: Passante, 2: Sekante, 3: Tangente", "1: Sekante, 2: Tangente, 3: Passante|1: Tangente, 2: Passante, 3: Sekante", "Passante (kein Schnitt), Sekante (2 Schnitte), Tangente (1 Schnitt)."],
+            ["Bestimme die Höhe $h$ im gleichschenkligen Dreieck:<br><svg viewBox='0 0 100 100' class='max-h-[14vh] mx-auto my-4 drop-shadow-lg text-red-400'><polygon points='10,90 90,90 50,10' fill='none' stroke='currentColor' stroke-width='3'/><line x1='50' y1='10' x2='50' y2='90' stroke='currentColor' stroke-dasharray='4'/><text x='50' y='102' fill='currentColor' font-size='14' text-anchor='middle'>4</text><text x='75' y='45' fill='currentColor' font-size='14'>5</text><text x='40' y='60' fill='currentColor' font-size='14'>h</text></svg>", "h = \\sqrt{21}", "h = 3|h = \\sqrt{41}|h = 4", "Pythagoras mit halber Basis (2): $h^2 + 2^2 = 5^2 \\Rightarrow h = \\sqrt{25-4}$"],
+            ["Bestimme die Höhe $h$ im gleichseitigen Dreieck:<br><svg viewBox='0 0 100 100' class='max-h-[14vh] mx-auto my-4 drop-shadow-lg text-green-400'><polygon points='10,90 90,90 50,20.7' fill='none' stroke='currentColor' stroke-width='3'/><line x1='50' y1='20.7' x2='50' y2='90' stroke='currentColor' stroke-dasharray='4'/><text x='50' y='102' fill='currentColor' font-size='14' text-anchor='middle'>4</text><text x='40' y='60' fill='currentColor' font-size='14'>h</text></svg>", "h = \\sqrt{12} = 2\\sqrt{3}", "h = 2|h = \\sqrt{8}|h = 3", "Pythagoras: $h^2 + 2^2 = 4^2 \\Rightarrow h = \\sqrt{16-4}$"],
+            ["Bestimme die Länge der Strecke $x$ (Strahlensatz):<br><svg viewBox='0 0 120 70' class='max-h-[14vh] mx-auto my-4 drop-shadow-lg text-purple-400'><polygon points='10,60 110,60 50,10' fill='none' stroke='currentColor' stroke-width='3'/><line x1='34' y1='30' x2='86' y2='30' stroke='currentColor' stroke-width='3'/><text x='25' y='50' fill='currentColor' font-size='14'>4</text><text x='75' y='50' fill='currentColor' font-size='14'>2</text><text x='60' y='25' fill='currentColor' font-size='14'>2</text><text x='95' y='40' fill='currentColor' font-size='14'>x</text></svg>", "x = 1", "x = 2|x = 0{,}5|x = 1{,}5", "Verhältnisgleichung: $\\frac{x}{2} = \\frac{2}{4} \\Rightarrow x = 1$"],
+            ["Bestimme die Länge der Diagonalen $d$:<br><svg viewBox='0 0 100 50' class='max-h-[14vh] mx-auto my-4 drop-shadow-lg text-orange-400'><rect x='10' y='10' width='80' height='30' fill='none' stroke='currentColor' stroke-width='3'/><line x1='10' y1='40' x2='90' y2='10' stroke='currentColor' stroke-dasharray='4'/><text x='50' y='52' fill='currentColor' font-size='14'>5</text><text x='95' y='30' fill='currentColor' font-size='14'>2</text></svg>", "d = \\sqrt{29}", "d = \\sqrt{21}|d = 7|d = 3", "Pythagoras: $d^2 = 5^2 + 2^2 = 25 + 4 = 29$"],
+            
+            // Algebra - Seite 1 & 2
+            ["Berechne $\\frac{1}{3} + \\frac{1}{2}$", "\\frac{5}{6}", "\\frac{2}{5}|\\frac{1}{6}|\\frac{2}{6}", "Hauptnenner bilden: $\\frac{2}{6} + \\frac{3}{6} = \\frac{5}{6}$"],
+            ["Vereinfache $\\sqrt{180}$", "6\\sqrt{5}", "9\\sqrt{20}|18\\sqrt{10}|36\\sqrt{5}", "$\\sqrt{36 \\cdot 5} = 6\\sqrt{5}$"],
+            ["Löse $-(x-1)^2 = -25$", "x=6 \\text{ oder } x=-4", "x=5 \\text{ oder } x=-5|x=26|x=\\pm 4", "$(x-1)^2 = 25 \\Rightarrow x-1 = \\pm 5$"],
+            ["Faktorisiere $6x^3+8x^5+12x$", "2x(3x^2+4x^4+6)", "2x(3x^2+4x^4+12)|x(6x^2+8x^4+12)|2(3x^3+4x^5+6x)", "Größten gemeinsamen Faktor $2x$ ausklammern."],
+            ["Berechne $(\\sqrt{x}+\\sqrt{2})^2$", "x + 2\\sqrt{2x} + 2", "x + 2|x^2 + 4|x + \\sqrt{2x} + 2", "1. binomische Formel: $a^2 + 2ab + b^2$"],
+            ["Löse $3^x=27$", "x = 3", "x = 9|x = 4|x = \\sqrt{27}", "$3^3 = 27$"],
+            ["Zahl im Zehnersystem: $(101)_2$", "5", "101|9|3", "$1\\cdot 2^2 + 0\\cdot 2^1 + 1\\cdot 2^0 = 4+0+1 = 5$"],
+            ["$f(x)=x^2-2(x^3-2x)$. Berechne $f(-2)$", "12", "-12|20|-4", "Einsetzen: $(-2)^2 - 2((-2)^3 - 2(-2)) = 4 - 2(-8+4) = 12$"],
+            ["Faktorisiere $15xy^4+5x^3y^2-25xy$", "5xy(3y^3+x^2y-5)", "5xy(3y^4+x^2y^2-5)|5(3xy^4+x^3y^2-5)|15xy(y^3+x^2y-5)", "$5xy$ aus allen Termen ausklammern."],
+            ["Berechne $\\log_3(81)$", "4", "9|27|3", "Die Frage lautet: 3 hoch was ist 81? $\\Rightarrow 3^4 = 81$"],
+            ["Löse $\\frac{8}{x} = \\frac{1}{4}$", "x = 32", "x = 2|x = 4|x = 16", "Kreuzmultiplikation: $8 \\cdot 4 = x \\cdot 1$"],
+            ["Löse nach a auf: $-6a^2+12b=0$", "a = \\pm\\sqrt{2b}", "a = \\sqrt{2b}|a = 2b|a = \\pm 2b", "$6a^2 = 12b \\Rightarrow a^2 = 2b$"],
+            ["Löse $2x^2=32$", "x = \\pm 4", "x = 4|x = 16|x = \\pm 16", "$x^2=16 \\Rightarrow x = \\pm 4$"],
+            ["Berechne $\\frac{3}{4}+\\frac{1}{2}+\\frac{7}{4}$", "3", "\\frac{11}{4}|2|\\frac{10}{4}", "$\\frac{3}{4} + \\frac{2}{4} + \\frac{7}{4} = \\frac{12}{4} = 3$"],
+            ["Löse $9x+3=3$", "x = 0", "x = 1|x = -1|x = \\frac{1}{3}", "$9x = 0 \\Rightarrow x = 0$"],
+            ["Faktorisiere $2x^2+8x+8$", "2(x+2)^2", "2(x+4)^2|(2x+4)^2|2(x^2+4)", "2 ausklammern, dann 1. binomische Formel."],
+            ["Löse $2^x=32$", "x = 5", "x = 16|x = 4|x = 6", "$2^5 = 32$"],
+            ["Berechne $63 : \\frac{3}{2}$", "42", "94{,}5|21|126", "Mit dem Kehrwert multiplizieren: $63 \\cdot \\frac{2}{3}$"],
+            ["$f(x)=x^3-2x^2$. Berechne $f(-1)$", "-3", "-1|1|3", "$(-1)^3 - 2(-1)^2 = -1 - 2 = -3$"],
+            ["Faktorisiere $3xy^4-9x^3y^2$", "3xy^2(y^2-3x^2)", "3xy(y^3-3x^2y)|3x^2y^2(y-3x)|xy^2(3y^2-9x^2)", "$3xy^2$ als größten gemeinsamen Faktor ausklammern."],
+
+            // Algebra - Seite 3 & 4
+            ["Berechne $126-41$", "85", "75|81|95", "$126 - 40 = 86$, dann $- 1 = 85$"],
+            ["Berechne $6 \\cdot 17$", "102", "112|92|108", "$6 \\cdot 10 + 6 \\cdot 7 = 60 + 42 = 102$"],
+            ["Berechne $20\\% \\text{ von } 400$", "80", "20|40|120", "$10\\%$ sind $40$, also sind $20\\%$ das Doppelte."],
+            ["Zwischen welchen ganzen Zahlen liegt $\\sqrt{55}$?", "7 und 8", "5 und 6|6 und 7|8 und 9", "$7^2=49$ und $8^2=64$"],
+            ["Zwischen welchen ganzen Zahlen liegt $\\lg 241$?", "2 und 3", "1 und 2|3 und 4|24 und 25", "$10^2 = 100$ und $10^3 = 1000$"],
+            ["Berechne $\\sqrt{5} \\cdot \\sqrt{20}$", "10", "25|5\\sqrt{20}|100", "$\\sqrt{5 \\cdot 20} = \\sqrt{100} = 10$"],
+            ["Löse $x^3-2x^2=0$", "x=0 \\text{ oder } x=2", "x=0 \\text{ oder } x=-2|x=2|x=\\sqrt{2}", "$x^2$ ausklammern: $x^2(x-2)=0$"],
+            ["Multipliziere $(x+3)(x-1)$", "x^2+2x-3", "x^2-3|x^2+4x-3|x^2-2x+3", "Ausmultiplizieren: $x^2 -x + 3x - 3$"],
+            ["Berechne $\\frac{1}{3} + \\frac{2}{5}$", "\\frac{11}{15}", "\\frac{3}{8}|\\frac{10}{15}|\\frac{7}{15}", "Hauptnenner 15: $\\frac{5}{15} + \\frac{6}{15}$"],
+            ["Löse $x^2-1 < 0$", "-1 < x < 1", "x < 1|x < -1|x > 1", "Parabel nach oben geöffnet, Nullstellen bei $\\pm 1$"],
+            ["Schreibe auf einen Bruchstrich: $x+1+\\frac{2}{x}$", "\\frac{x^2+x+2}{x}", "\\frac{x+3}{x}|\\frac{x^2+3}{x}|\\frac{2x+1}{x}", "Alle Terme mit $x$ erweitern."],
+            ["Faktorisiere $x^2+3x+2$", "(x+1)(x+2)", "(x+3)(x-1)|x(x+3)+2|(x+2)^2", "Satz von Vieta: $1+2=3$ und $1\\cdot 2=2$"],
+            ["Berechne $\\frac{2}{3} - \\frac{1}{4}$", "\\frac{5}{12}", "\\frac{1}{-1}|\\frac{1}{12}|\\frac{11}{12}", "Hauptnenner 12: $\\frac{8}{12} - \\frac{3}{12}$"],
+            ["Kürze $\\frac{a^2b-ab^2}{ab}$", "a-b", "a|b|a^2-b^2", "$ab$ im Zähler ausklammern und dann kürzen."],
+
+            // Algebra - Seite 5 & 6
+            ["Schreibe als einen Bruch $\\frac{2}{x}+\\frac{3}{x^2}$", "\\frac{2x+3}{x^2}", "\\frac{5}{x^3}|\\frac{5}{x^2}|\\frac{2x+3}{x^3}", "Den ersten Bruch mit $x$ erweitern: $\\frac{2x}{x^2} + \\frac{3}{x^2}$"],
+            ["Ergänze zu einem Quadrat $x^2-8x$", "x^2-8x+16", "x^2-8x-16|x^2-8x+64|x^2-8x-8", "Die Hälfte von 8 ist 4, quadriert ist 16."],
+            ["Zwischen welchen ganzen Zahlen liegt $\\log_2 100$?", "6 und 7", "5 und 6|7 und 8|10 und 11", "$2^6=64$ und $2^7=128$"],
+            ["Löse $5x^2-2x=0$", "x=0 \\text{ oder } x=\\frac{2}{5}", "x=0 \\text{ oder } x=\\frac{5}{2}|x=\\frac{2}{5}|x=0", "$x(5x-2)=0 \\Rightarrow 5x-2=0$"],
+            ["Berechne $\\sin(90^\\circ)$", "1", "0|-1|0{,}5", "Am Einheitskreis ist der y-Wert bei 90° genau 1."],
+            ["Bestimme die x-Koordinate des Scheitelpunktes $y=x^2+4x$", "x = -2", "x = 2|x = -4|x = 0", "Scheitelpunktform oder $x_S = -\\frac{p}{2} = -\\frac{4}{2}$"],
+            ["Löse $\\frac{x}{5}=\\frac{2}{3}$", "x = \\frac{10}{3}", "x = \\frac{3}{10}|x = 10|x = 15", "Beide Seiten mal 5: $x = 5 \\cdot \\frac{2}{3}$"],
+            ["Faktorisiere $3ab+b^2+2ab$", "b(5a+b)", "b(3a+b+2a)|b^2(5a)|ab(5+b)", "$3ab+2ab = 5ab$. Dann $b$ ausklammern."],
+            ["Löse $\\frac{x^2}{x+3}=0$", "x = 0", "x = -3|x = \\pm 3|x = 0 \\text{ oder } x=-3", "Ein Bruch ist genau dann 0, wenn der Zähler 0 ist (und der Nenner nicht)."],
+            ["Faktorisiere $a^3+a^5$", "a^3(1+a^2)", "a^3(1+a)|a^2(a+a^3)|a^5(a^{-2}+1)", "Die kleinste Potenz $a^3$ ausklammern."],
+
+            // Algebra - Seite 7 bis 22 Highlights
+            ["Faktorisiere $2x^2-4x$", "2x(x-2)", "2(x^2-2x)|x(2x-4)|2x(x+2)", "Den größten gemeinsamen Teiler $2x$ ausklammern."],
+            ["Berechne $3\\% \\text{ von } 200$", "6", "3|60|15", "$1\\%$ sind $2$, also sind $3\\%$ dann $6$."],
+            ["Multipliziere $(2x+3)^2$", "4x^2+12x+9", "4x^2+9|2x^2+12x+9|4x^2+6x+9", "1. binomische Formel: $(a+b)^2 = a^2+2ab+b^2$"],
+            ["Berechne $\\cos(90^\\circ)$", "0", "1|-1|0{,}5", "Am Einheitskreis ist der x-Wert bei 90° genau 0."],
+            ["Löse $x^3-3x=0$", "x=0 \\text{ oder } x=\\pm\\sqrt{3}", "x=0 \\text{ oder } x=3|x=\\pm\\sqrt{3}|x=0", "$x(x^2-3)=0$"],
+            ["Bilde eine Stammfunktion zu $2x^3-4x$", "\\frac{1}{2}x^4-2x^2", "6x^2-4|\\frac{1}{4}x^4-2x^2|2x^4-4x^2", "Potenzregel für Integrale anwenden."],
+            ["Faktorisiere $4x^2-9$", "(2x+3)(2x-3)", "(2x-3)^2|(4x-9)(x+1)|(2x-9)(2x+9)", "3. binomische Formel: $a^2-b^2=(a+b)(a-b)$"],
+            ["Löse $\\frac{x^2+1}{x-2}=0$", "Keine Lösung", "x = \\pm 1|x = 2|x = -1", "$x^2+1=0$ hat keine reelle Lösung."],
+            ["Löse die Klammer auf: $(a^2b)^3$", "a^6b^3", "a^5b^3|a^6b|a^2b^3", "Potenzgesetze: Exponenten werden multipliziert."],
+            ["Bestimme die Steigung durch $P(1|2)$ und $Q(3|6)$", "m = 2", "m = \\frac{1}{2}|m = -2|m = 4", "$m = \\frac{y_2-y_1}{x_2-x_1} = \\frac{6-2}{3-1} = \\frac{4}{2} = 2$"],
+            ["Schreibe als einfache Potenz: $\\frac{10^2}{5^2}$", "2^2", "5^2|2^0|10^0", "$\\left(\\frac{10}{5}\\right)^2 = 2^2$"],
+            ["Löse nach r auf: $V=\\pi \\cdot r^2 \\cdot h$", "r = \\sqrt{\\frac{V}{\\pi h}}", "r = \\frac{V}{\\pi h}|r = \\sqrt{V - \\pi h}|r = \\frac{\\sqrt{V}}{\\pi h}", "Durch $\\pi h$ teilen und Wurzel ziehen."],
+            ["Bestimme $\\lim_{n\\to\\infty} \\frac{2n^2+n}{n-1}$", "\\infty", "2|0|1", "Der Zählergrad (2) ist größer als der Nennergrad (1)."],
+            ["Löse nach l auf: $d^2=l^2+b^2$", "l = \\sqrt{d^2-b^2}", "l = d - b|l = \\sqrt{d^2+b^2}|l = d^2-b^2", "Pythagoras umstellen."],
+            ["Berechne $12\\% \\text{ von } 600$", "72", "12|60|720", "$1\\%$ sind $6$, also sind $12\\%$ dann $12 \\cdot 6 = 72$"],
+            ["Löse nach x auf: $3^x=17$", "x = \\log_3(17)", "x = \\frac{17}{3}|x = \\sqrt[3]{17}|x = \\log_{17}(3)", "Anwendung der Definition des Logarithmus."],
+            ["Wie viel Prozent sind 40 von 160?", "25\\%", "40\\%|20\\%|33{,}3\\%", "$\\frac{40}{160} = \\frac{1}{4} = 25\\%$"],
+            ["Schreibe als eine Potenz: $\\frac{10^3 \\cdot 10^{-5}}{10^2}$", "10^{-4}", "10^{-10}|10^0|10^{-2}", "Zähler: $10^{-2}$. Geteilt durch $10^2$ ergibt $10^{-4}$"],
+            ["Berechne $\\lg(500) - \\lg(5)$", "2", "100|1|0", "Logarithmusgesetz: $\\lg(\\frac{500}{5}) = \\lg(100) = 2$"]
+        ];
+
+        // Daten parsen für das Spiel
+        const allQuestions = rawData.map(row => ({ 
+            q: row[0], 
+            a: row[1], 
+            w: row[2].split('|'), 
+            exp: row[3] 
+        }));
+
+        // --- GAME STATE ---
+        let questions = [];
+        let currentQIndex = 0;
+        let scores = { p1: 0, p2: 0 };
+        let gameState = 'start'; // 'start', 'ready_check', 'playing', 'feedback'
+        
+        let p1Ready = false;
+        let p2Ready = false;
+
+        let loopTimeout = null;
+        let currentAnswerObj = null; // { text: "...", isCorrect: boolean }
+        let wrongShownCount = 0;
+        let activeAnswerElement = null;
+
+        // --- HELPER FUNCTIONS ---
+        // Rendert Text mit Inline-Math (eingeschlossen in $) - Erhält HTML-Tags (wie SVGs)
+        function renderMixedText(str) {
+            return str.replace(/\$(.*?)\$/g, (match, math) => {
+                return katex.renderToString(math, { throwOnError: false });
+            });
+        }
+
+        // Rendert einen reinen Mathematik-String (groß)
+        function renderMath(str) {
+            // Check if string contains regular text and math mixed
+            if (str.includes('\\text{') || !str.match(/[a-zA-Z]/) || str.includes('\\') || str.includes('^')) {
+                return katex.renderToString(str, { throwOnError: false, displayMode: true });
+            }
+            // Fallback for plain text answers
+            return str;
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- CORE GAME LOGIC ---
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            
+            questions = shuffle([...allQuestions]);
+            currentQIndex = 0;
+            scores = { p1: 0, p2: 0 };
+            updateScoreUI();
+            
+            nextRound();
+        }
+
+        function nextRound() {
+            if (currentQIndex >= questions.length) {
+                // Game Over Loop
+                questions = shuffle([...allQuestions]);
+                currentQIndex = 0;
+            }
+
+            gameState = 'ready_check';
+            p1Ready = false;
+            p2Ready = false;
+            wrongShownCount = 0;
+            currentAnswerObj = null;
+            
+            // Reset UI
+            document.getElementById('explanation-box').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('answer-arena').innerHTML = '<div class="text-lg md:text-2xl text-slate-400 animate-pulse text-center px-4">Lest die Aufgabe.<br><b class="text-white">Beide Spieler</b> müssen tippen, um zu starten!</div>';
+            
+            const readyP1 = document.getElementById('ready-p1');
+            readyP1.innerHTML = "BEREIT?<br>(Tippen)";
+            readyP1.classList.remove('text-green-400');
+            readyP1.classList.add('text-white/50');
+            
+            const readyP2 = document.getElementById('ready-p2');
+            readyP2.innerHTML = "BEREIT?<br>(Tippen)";
+            readyP2.classList.remove('text-green-400');
+            readyP2.classList.add('text-white/50');
+
+            // Render Question (kann SVGs enthalten)
+            const qData = questions[currentQIndex];
+            document.getElementById('question-text').innerHTML = renderMixedText(qData.q);
+
+            // Clear any lingering timeouts
+            clearTimeout(loopTimeout);
+        }
+
+        function showNextAnswer() {
+            if (gameState !== 'playing') return;
+
+            const arena = document.getElementById('answer-arena');
+            arena.innerHTML = ''; // Clear previous
+
+            const qData = questions[currentQIndex];
+            
+            // Determine if we show correct or wrong answer
+            // Minimum 2 wrong answers before correct can appear
+            let isCorrect = false;
+            if (wrongShownCount >= 2) {
+                // 30% chance to show correct, or 100% if we've shown 6 wrong ones
+                if (Math.random() < 0.3 || wrongShownCount > 6) {
+                    isCorrect = true;
+                }
+            }
+
+            let textToShow = "";
+            if (isCorrect) {
+                textToShow = qData.a;
+                wrongShownCount = 0;
+            } else {
+                const randomWrongIndex = Math.floor(Math.random() * qData.w.length);
+                textToShow = qData.w[randomWrongIndex];
+                wrongShownCount++;
+            }
+
+            currentAnswerObj = { text: textToShow, isCorrect: isCorrect };
+
+            // Create answer element
+            const el = document.createElement('div');
+            el.className = 'absolute top-1/2 left-1/2 text-[clamp(2rem,5vw,4.5rem)] font-bold bg-slate-700 px-8 py-6 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.8)] border-2 border-slate-600 answer-zoom text-center w-max max-w-[90%]';
+            el.innerHTML = renderMath(textToShow);
+            
+            arena.appendChild(el);
+            activeAnswerElement = el;
+
+            // Wait 1.4s, then remove and show next
+            loopTimeout = setTimeout(() => {
+                if (gameState === 'playing') {
+                    if (el && el.parentNode) {
+                        el.style.opacity = '0';
+                        el.style.transform = 'translate(-50%, -50%) scale(0.5)';
+                        el.style.transition = 'all 0.2s';
+                    }
+                    setTimeout(showNextAnswer, 250); // Gap between answers
+                }
+            }, 1400);
+        }
+
+        function handleTap(playerStr) {
+            if (gameState === 'ready_check') {
+                // Setze Spieler auf "Bereit"
+                if (playerStr === 'p1' && !p1Ready) {
+                    p1Ready = true;
+                    const el = document.getElementById('ready-p1');
+                    el.innerHTML = "BEREIT ✔";
+                    el.classList.remove('text-white/50');
+                    el.classList.add('text-green-400');
+                }
+                if (playerStr === 'p2' && !p2Ready) {
+                    p2Ready = true;
+                    const el = document.getElementById('ready-p2');
+                    el.innerHTML = "BEREIT ✔";
+                    el.classList.remove('text-white/50');
+                    el.classList.add('text-green-400');
+                }
+
+                // Wenn beide bereit sind, starte die Runde
+                if (p1Ready && p2Ready) {
+                    gameState = 'playing';
+                    document.getElementById('answer-arena').innerHTML = ''; // Wartetext entfernen
+                    document.getElementById('ready-p1').innerHTML = "";
+                    document.getElementById('ready-p2').innerHTML = "";
+                    loopTimeout = setTimeout(showNextAnswer, 400); // Antworten mit kurzer Verzögerung starten
+                }
+                return; // Im Ready-Check hier abbrechen
+            }
+
+            if (gameState !== 'playing' || !currentAnswerObj) return;
+
+            if (currentAnswerObj.isCorrect) {
+                // CORRECT HIT!
+                gameState = 'feedback';
+                clearTimeout(loopTimeout);
+                
+                scores[playerStr] += 10;
+                updateScoreUI();
+                
+                // Visual feedback
+                triggerFlash(playerStr, 'bg-green-500');
+                showFloatingScore(playerStr, "+10", "text-green-400");
+                
+                if (activeAnswerElement) {
+                    activeAnswerElement.classList.remove('bg-slate-700', 'border-slate-600');
+                    activeAnswerElement.classList.add('bg-green-600', 'border-green-400', 'shadow-[0_0_50px_rgba(34,197,94,0.8)]');
+                }
+
+                // Show Explanation
+                const expBox = document.getElementById('explanation-box');
+                expBox.innerHTML = renderMixedText(questions[currentQIndex].exp);
+                expBox.classList.remove('hidden');
+                document.getElementById('next-btn').classList.remove('hidden');
+                
+                currentQIndex++;
+
+            } else {
+                // WRONG HIT!
+                scores[playerStr] -= 5;
+                updateScoreUI();
+                
+                triggerFlash(playerStr, 'bg-red-500');
+                showFloatingScore(playerStr, "-5", "text-red-400");
+                
+                // Remove the wrong answer instantly and show next to keep pace fast
+                clearTimeout(loopTimeout);
+                if (activeAnswerElement && activeAnswerElement.parentNode) {
+                    activeAnswerElement.parentNode.removeChild(activeAnswerElement);
+                }
+                currentAnswerObj = null;
+                setTimeout(showNextAnswer, 200);
+            }
+        }
+
+        // --- UI EFFECTS ---
+        function updateScoreUI() {
+            document.getElementById('score-p1').innerText = scores.p1;
+            document.getElementById('score-p2').innerText = scores.p2;
+        }
+
+        function triggerFlash(player, colorClass) {
+            const flash = document.getElementById(`flash-${player}`);
+            flash.className = `absolute inset-0 pointer-events-none transition-opacity duration-100 opacity-60 ${colorClass}`;
+            setTimeout(() => {
+                flash.className = `absolute inset-0 pointer-events-none transition-opacity duration-500 opacity-0 bg-white`;
+            }, 100);
+        }
+
+        function showFloatingScore(player, text, colorClass) {
+            const el = document.getElementById(`floating-score-${player}`);
+            
+            // Reset animation
+            el.classList.remove('animate-score');
+            void el.offsetWidth; // trigger reflow
+            
+            el.innerText = text;
+            el.className = `absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-7xl md:text-9xl font-black pointer-events-none ${colorClass} animate-score drop-shadow-[0_0_15px_rgba(0,0,0,1)]`;
+        }
+
+        // --- EVENT LISTENERS ---
+        // Mouse and Touch Events for robust iPad functionality
+        const btnP1 = document.getElementById('btn-p1');
+        const btnP2 = document.getElementById('btn-p2');
+
+        function bindButton(element, player) {
+            const handler = (e) => {
+                e.preventDefault(); // Verhindert double-firing auf Touch-Geräten
+                handleTap(player);
+            };
+            element.addEventListener('touchstart', handler, {passive: false});
+            element.addEventListener('mousedown', handler);
+        }
+
+        bindButton(btnP1, 'p1');
+        bindButton(btnP2, 'p2');
+
+        // Keyboard support for testing on PC
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'a') handleTap('p1');
+            if (e.key.toLowerCase() === 'l') handleTap('p2');
+            if (e.key === 'Enter' && gameState === 'feedback') nextRound();
+        });
+
+    </script>
+</body>
+</html>
